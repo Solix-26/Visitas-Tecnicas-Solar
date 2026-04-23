@@ -63,6 +63,7 @@
                 </div>
                 <p id="login-error" class="login-error" role="alert"></p>
                 <button type="submit" id="btn-login-submit" class="btn-login-submit">Ingresar</button>
+                <p class="login-forgot"><a href="#" id="btn-forgot-password">¿Olvidaste tu contraseña?</a></p>
             </form>
 
             <p class="login-footer">Solix SAS &copy; 2026</p>
@@ -154,8 +155,10 @@
                         <select id="tipo-cliente">
                             <option value="">Seleccionar...</option>
                             <option value="residencial">🏠 Residencial</option>
-                            <option value="domestica">🏡 Doméstica</option>
+                            <option value="comercial">🏢 Comercial</option>
                             <option value="industrial">🏭 Industrial</option>
+                            <option value="turismo">🏨 Turismo / Servicios</option>
+                            <option value="agroindustrial">🌾 Agroindustrial</option>
                         </select>
                     </div>
                 </div>
@@ -203,23 +206,53 @@
                         <small>Introduce los kilovatios contratados (kW)</small>
                     </div>
                     <div class="form-group">
-                        <label><input type="checkbox" id="requiere-baterias"> ¿Requiere baterías?</label>
+                        <label>¿Requiere baterías?</label>
+                        <div class="yes-no-buttons">
+                            <button type="button" class="btn-yesno" id="btn-baterias-si">Sí</button>
+                            <button type="button" class="btn-yesno" id="btn-baterias-no">No</button>
+                        </div>
+                        <input type="hidden" id="requiere-baterias" value="">
                     </div>
-                    <div class="form-group" id="horas-respaldo-group" style="display:none;">
-                        <label for="horas-respaldo">¿Cuántas horas de respaldo?</label>
-                        <input type="number" id="horas-respaldo" min="0" step="0.1" placeholder="Ej: 4">
+                    <div class="form-group" id="num-baterias-group" style="display:none;">
+                        <label for="num-baterias">Número de baterías</label>
+                        <select id="num-baterias">
+                            <option value="">Seleccionar...</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                            <option value="10">10</option>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label for="consumo-bimestral">Consumo Bimestral Promedio (kWh)</label>
+                        <label for="consumo-bimestral">Último consumo del mes (kWh)</label>
                         <input type="number" id="consumo-bimestral" step="1" placeholder="Ej: 850">
                     </div>
                     <div class="form-group">
-                        <label for="pago-bimestral">Pago Bimestral Promedio (COP)</label>
-                        <input type="number" id="pago-bimestral" step="0.01" placeholder="Ej: 350000">
+                        <label for="pago-bimestral">Consumo en los últimos 6 meses (kWh)</label>
+                        <input type="number" id="pago-bimestral" step="1" placeholder="Ej: 5100">
                     </div>
                     <div class="form-group">
-                        <label for="motivo">Motivo / Interés del Cliente</label>
-                        <textarea id="motivo" rows="3" placeholder="Ahorro en recibo, independencia energética, proyecto nuevo..."></textarea>
+                        <label for="motivo-select">Motivo / Interés del Cliente</label>
+                        <select id="motivo-select">
+                            <option value="">Seleccionar...</option>
+                            <option value="ahorro">Ahorro en factura de energía</option>
+                            <option value="independencia">Independencia energética</option>
+                            <option value="sostenibilidad">Sostenibilidad / medio ambiente</option>
+                            <option value="proyecto-nuevo">Proyecto nuevo de construcción</option>
+                            <option value="respaldo">Respaldo ante cortes de energía</option>
+                            <option value="incentivo">Incentivos fiscales / tributarios</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="motivo-otro-group" style="display:none;">
+                        <label for="motivo-otro">Especifica el motivo</label>
+                        <textarea id="motivo-otro" rows="2" placeholder="Describe el motivo del cliente..."></textarea>
                     </div>
                 </div>
                 <div class="form-actions">
@@ -444,6 +477,19 @@
                             <label class="check-option na"><input type="radio" name="check-centro-carga" value="na"><span>N/A</span></label>
                         </div>
                     </div>
+                    <!-- Fotos del tablero principal -->
+                    <div style="margin: 0.8rem 0; padding: 0.8rem; background: var(--bg-card); border-radius: 8px; border: 1px dashed var(--border);">
+                        <label style="display:block; font-size:0.85rem; font-weight:600; margin-bottom:0.5rem; color:var(--primary);">📸 Tablero principal</label>
+                        <div style="display:flex; gap:0.6rem; margin-bottom:0.8rem;">
+                            <button type="button" id="btn-tablero-camara" class="btn btn-primary btn-small">📸 Tomar Foto</button>
+                            <button type="button" id="btn-tablero-galeria" class="btn btn-secondary btn-small">📁 Galería</button>
+                        </div>
+                        <div id="tablero-gallery" class="photo-gallery" style="min-height:80px;">
+                            <div class="photo-placeholder"><span>⚡</span><p>Sin fotos del tablero</p></div>
+                        </div>
+                        <input type="file" id="tablero-camera-input" aria-label="Cámara tablero" accept="image/*" capture="environment" style="display:none">
+                        <input type="file" id="tablero-gallery-input" aria-label="Galería tablero" accept="image/*" multiple style="display:none">
+                    </div>
                     <div class="checklist-item">
                         <span>Medidor bidireccional o espacio para uno</span>
                         <div class="check-options">
@@ -588,8 +634,20 @@
                 </div>
 
                 <div class="form-group" style="margin-top: 1rem;">
-                    <label for="observaciones-checklist">Observaciones de la Evaluación</label>
-                    <textarea id="observaciones-checklist" rows="4" placeholder="Obstáculos, sombras de tinacos, antenas, árboles cercanos..."></textarea>
+                    <label for="tipo-obstaculos">Tipo de obstáculos / sombras</label>
+                    <select id="tipo-obstaculos">
+                        <option value="">Seleccionar...</option>
+                        <option value="edificacion-vecina">Edificación vecina</option>
+                        <option value="vegetacion">Vegetación / árboles</option>
+                        <option value="sombra-propia">Sombra propia (antena, tinaco, etc.)</option>
+                        <option value="sombra-vecinos">Sombra de vecinos</option>
+                        <option value="sin-obstaculos">Sin obstáculos</option>
+                        <option value="otros">Otros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="observaciones-checklist">Descripción de obstáculos / Observaciones</label>
+                    <textarea id="observaciones-checklist" rows="3" placeholder="Describe el obstáculo, distancia, impacto estimado..."></textarea>
                 </div>
 
                 <div class="form-actions">
@@ -641,6 +699,7 @@
                                     <input type="file" id="area-1-camera-input" aria-label="Cámara área" accept="image/*" capture="environment" style="display:none">
                                     <input type="file" id="area-1-gallery-input" aria-label="Galería área" accept="image/*" multiple style="display:none">
                                 </div>
+                                <button type="button" class="btn btn-small btn-danger btn-remove-area" style="margin-bottom:0.5rem;">✕ Quitar esta área</button>
                                 <hr style="margin:0.8rem 0; border:none; border-top:1px dashed var(--border);">
                             </div>
                         </div>
@@ -702,8 +761,17 @@
                 </div>
 
                 <div class="form-group" style="margin-top: 1rem;">
-                    <label for="equipo-medicion">Equipo de Medición Utilizado</label>
-                    <input type="text" id="equipo-medicion" placeholder="Ej: Solarímetro, Multímetro, App Brújula, Cinta métrica...">
+                    <label for="equipo-medicion">Equipo de Medición Utilizado <span style="color:#e53935;">*</span></label>
+                    <input type="text" id="equipo-medicion" placeholder="Ej: Solarímetro, Multímetro, App Brújula, Cinta métrica..." required>
+                    <div style="display:flex; gap:0.6rem; margin-top:0.6rem; margin-bottom:0.6rem;">
+                        <button type="button" id="btn-equipo-camara" class="btn btn-primary btn-small">📸 Foto del equipo</button>
+                        <button type="button" id="btn-equipo-galeria" class="btn btn-secondary btn-small">📁 Galería</button>
+                    </div>
+                    <div id="equipo-gallery" class="photo-gallery" style="min-height:80px;">
+                        <div class="photo-placeholder"><span>📏</span><p>Sin fotos del equipo</p></div>
+                    </div>
+                    <input type="file" id="equipo-camera-input" aria-label="Cámara equipo" accept="image/*" capture="environment" style="display:none">
+                    <input type="file" id="equipo-gallery-input" aria-label="Galería equipo" accept="image/*" multiple style="display:none">
                 </div>
 
                 <div class="form-group">

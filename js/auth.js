@@ -54,6 +54,33 @@
                 });
             });
         }
+
+        var btnForgot = document.getElementById('btn-forgot-password');
+        if (btnForgot) {
+            btnForgot.addEventListener('click', function (e) {
+                e.preventDefault();
+                var email = document.getElementById('login-email').value.trim();
+                if (!email) {
+                    showLoginError('Ingresa tu correo electrónico primero');
+                    return;
+                }
+                auth.sendPasswordResetEmail(email)
+                    .then(function () {
+                        showLoginError('');
+                        var errorEl = document.getElementById('login-error');
+                        if (errorEl) {
+                            errorEl.style.color = '#4CAF50';
+                            errorEl.textContent = 'Correo de recuperación enviado. Revisa tu bandeja.';
+                        }
+                    })
+                    .catch(function (error) {
+                        var msg = 'No se pudo enviar el correo de recuperación';
+                        if (error.code === 'auth/user-not-found') msg = 'No existe una cuenta con ese correo';
+                        if (error.code === 'auth/invalid-email') msg = 'Correo electrónico inválido';
+                        showLoginError(msg);
+                    });
+            });
+        }
     }
 
     function verificarPerfil(user) {

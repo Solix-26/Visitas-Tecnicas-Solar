@@ -557,6 +557,32 @@ body {
 .btn-login-submit:active { transform: scale(0.98); }
 .btn-login-submit:disabled { background: #bbb; cursor: not-allowed; }
 
+.login-forgot {
+    text-align: center; margin-top: 0.75rem; font-size: 0.85rem;
+}
+.login-forgot a {
+    color: var(--sky); text-decoration: none;
+}
+.login-forgot a:hover { text-decoration: underline; }
+
+/* Yes/No toggle buttons */
+.yes-no-buttons {
+    display: flex; gap: 0.5rem; margin-top: 0.4rem;
+}
+.btn-yesno {
+    flex: 1; padding: 0.5rem 1rem;
+    border: 2px solid var(--border); border-radius: 8px;
+    background: #fff; color: var(--text);
+    font-size: 0.95rem; font-weight: 600; cursor: pointer;
+    transition: all 0.15s;
+}
+.btn-yesno:hover { border-color: var(--primary); }
+.btn-yesno.active {
+    background: var(--primary); color: #fff; border-color: var(--primary);
+}
+#btn-baterias-si.active { background: var(--success); border-color: var(--success); }
+#btn-baterias-no.active { background: var(--text-light); border-color: var(--text-light); }
+
 .login-footer {
     font-size: 0.75rem; color: var(--text-light);
     margin-top: 1.5rem; text-align: center;

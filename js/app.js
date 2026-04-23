@@ -27,14 +27,52 @@
         initReciboPhotos();
         initArea1Photos();
         initIrradiacionAuto();
-        // Mostrar/ocultar horas de respaldo según el checkbox de baterías
-        const chkBaterias = document.getElementById('requiere-baterias');
-        const horasRespaldoGroup = document.getElementById('horas-respaldo-group');
-        if (chkBaterias && horasRespaldoGroup) {
-            chkBaterias.addEventListener('change', function() {
-                horasRespaldoGroup.style.display = this.checked ? '' : 'none';
-            });
+        initBateriasToggle();
+        initMotivoSelect();
+        initTableroPhotos();
+        initEquipoPhotos();
+        initRemoveAreaButtons();
+    }
+
+    function initBateriasToggle() {
+        const btnSi = document.getElementById('btn-baterias-si');
+        const btnNo = document.getElementById('btn-baterias-no');
+        const hidden = document.getElementById('requiere-baterias');
+        const numGroup = document.getElementById('num-baterias-group');
+        if (!btnSi || !btnNo) return;
+        function select(val) {
+            hidden.value = val;
+            btnSi.classList.toggle('active', val === 'si');
+            btnNo.classList.toggle('active', val === 'no');
+            if (numGroup) numGroup.style.display = val === 'si' ? '' : 'none';
         }
+        btnSi.addEventListener('click', () => select('si'));
+        btnNo.addEventListener('click', () => select('no'));
+    }
+
+    function initMotivoSelect() {
+        const sel = document.getElementById('motivo-select');
+        const otroGroup = document.getElementById('motivo-otro-group');
+        if (!sel || !otroGroup) return;
+        sel.addEventListener('change', function () {
+            otroGroup.style.display = this.value === 'otro' ? '' : 'none';
+        });
+    }
+
+    function initRemoveAreaButtons() {
+        // Wire up remove button on the static first area
+        const container = document.getElementById('areas-container');
+        if (!container) return;
+        container.querySelectorAll('.btn-remove-area').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const item = btn.closest('.area-item');
+                if (item && container.querySelectorAll('.area-item').length > 1) {
+                    container.removeChild(item);
+                } else {
+                    showToast('Debe haber al menos un área', 'error');
+                }
+            });
+        });
     }
     
     // ========== IRRADIACIÓN SOLAR AUTOMÁTICA ==========
@@ -120,6 +158,90 @@
         return 4.0;
     }
     
+    // ========== FOTOS TABLERO PRINCIPAL ==========
+    let tableroPhotos = [];
+    function initTableroPhotos() {
+        const camInput = document.getElementById('tablero-camera-input');
+        const galInput = document.getElementById('tablero-gallery-input');
+        const btnCam = document.getElementById('btn-tablero-camara');
+        const btnGal = document.getElementById('btn-tablero-galeria');
+        if (btnCam) btnCam.addEventListener('click', () => camInput.click());
+        if (btnGal) btnGal.addEventListener('click', () => galInput.click());
+        if (camInput) camInput.addEventListener('change', e => handleGenericPhotos(e, tableroPhotos, 5, renderTableroPhotos));
+        if (galInput) galInput.addEventListener('change', e => handleGenericPhotos(e, tableroPhotos, 5, renderTableroPhotos));
+    }
+    function renderTableroPhotos() {
+        const gallery = document.getElementById('tablero-gallery');
+        if (!gallery) return;
+        if (tableroPhotos.length === 0) {
+            gallery.innerHTML = '<div class="photo-placeholder"><span>⚡</span><p>Sin fotos del tablero</p></div>';
+            return;
+        }
+        gallery.innerHTML = tableroPhotos.map((photo, i) =>
+            '<div class="photo-item"><img src="' + photo + '" alt="Tablero ' + (i+1) + '">' +
+            '<button class="photo-delete" data-index="' + i + '">✕</button>' +
+            '<span class="photo-number">' + (i+1) + '/' + tableroPhotos.length + '</span></div>'
+        ).join('');
+        gallery.querySelectorAll('.photo-delete').forEach(btn => {
+            btn.addEventListener('click', () => {
+                tableroPhotos.splice(parseInt(btn.dataset.index), 1);
+                renderTableroPhotos();
+            });
+        });
+    }
+
+    // ========== FOTOS EQUIPO DE MEDICIÓN ==========
+    let equipoPhotos = [];
+    function initEquipoPhotos() {
+        const camInput = document.getElementById('equipo-camera-input');
+        const galInput = document.getElementById('equipo-gallery-input');
+        const btnCam = document.getElementById('btn-equipo-camara');
+        const btnGal = document.getElementById('btn-equipo-galeria');
+        if (btnCam) btnCam.addEventListener('click', () => camInput.click());
+        if (btnGal) btnGal.addEventListener('click', () => galInput.click());
+        if (camInput) camInput.addEventListener('change', e => handleGenericPhotos(e, equipoPhotos, 5, renderEquipoPhotos));
+        if (galInput) galInput.addEventListener('change', e => handleGenericPhotos(e, equipoPhotos, 5, renderEquipoPhotos));
+    }
+    function renderEquipoPhotos() {
+        const gallery = document.getElementById('equipo-gallery');
+        if (!gallery) return;
+        if (equipoPhotos.length === 0) {
+            gallery.innerHTML = '<div class="photo-placeholder"><span>📏</span><p>Sin fotos del equipo</p></div>';
+            return;
+        }
+        gallery.innerHTML = equipoPhotos.map((photo, i) =>
+            '<div class="photo-item"><img src="' + photo + '" alt="Equipo ' + (i+1) + '">' +
+            '<button class="photo-delete" data-index="' + i + '">✕</button>' +
+            '<span class="photo-number">' + (i+1) + '/' + equipoPhotos.length + '</span></div>'
+        ).join('');
+        gallery.querySelectorAll('.photo-delete').forEach(btn => {
+            btn.addEventListener('click', () => {
+                equipoPhotos.splice(parseInt(btn.dataset.index), 1);
+                renderEquipoPhotos();
+            });
+        });
+    }
+
+    function handleGenericPhotos(e, arr, max, renderFn) {
+        const files = e.target.files;
+        if (!files.length) return;
+        if (arr.length + files.length > max) {
+            showToast('Máximo ' + max + ' fotos permitidas', 'error');
+            return;
+        }
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                compressImage(ev.target.result, 800, 0.7, (compressed) => {
+                    arr.push(compressed);
+                    renderFn();
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+        e.target.value = '';
+    }
+
     // ========== FOTOS TRANSFORMADOR ==========
     let transformadorPhotos = [];
     function initTransformadorPhotos() {
@@ -774,17 +896,18 @@
                     <label for="area-${index}-fotos">📸 Fotos del área</label>
                     <input type="file" id="area-${index}-fotos" accept="image/*" multiple>
                 </div>
-                <button type="button" class="btn btn-small btn-danger btn-remove-area">Quitar esta área</button>
+                <button type="button" class="btn btn-small btn-danger btn-remove-area" style="margin-bottom:0.5rem;">✕ Quitar esta área</button>
                 <hr style="margin:0.8rem 0; border:none; border-top:1px dashed var(--border);">
             `;
             container.appendChild(div);
 
-            const btnRemove = div.querySelector('.btn-remove-area');
-            if (btnRemove) {
-                btnRemove.addEventListener('click', () => {
+            div.querySelector('.btn-remove-area').addEventListener('click', () => {
+                if (container.querySelectorAll('.area-item').length > 1) {
                     container.removeChild(div);
-                });
-            }
+                } else {
+                    showToast('Debe haber al menos un área', 'error');
+                }
+            });
         });
     }
 
@@ -1405,13 +1528,16 @@
     }
     // ========== RECOLECTAR DATOS ==========
     function recolectarDatos() {
-        const requiereBaterias = document.getElementById('requiere-baterias')?.checked || false;
-        
+        const requiereBaterias = document.getElementById('requiere-baterias')?.value || '';
+        const motivoSelect = document.getElementById('motivo-select')?.value || '';
+        const motivoOtro = document.getElementById('motivo-otro')?.value || '';
+        const motivo = motivoSelect === 'otro' ? motivoOtro : motivoSelect;
+
         // Obtener datos del análisis solar
         const coordsEl = document.getElementById('solar-coords');
         const precisionEl = document.getElementById('solar-precision');
         const altitudeEl = document.getElementById('solar-altitude');
-        
+
         const data = {
             // Datos del Cliente
             fecha: document.getElementById('fecha').value,
@@ -1426,10 +1552,10 @@
             tarifaCFE: document.getElementById('tarifa-cfe').value,
             kilovatiosContratados: document.getElementById('kilovatios-contratados').value,
             requiereBaterias,
-            horasRespaldo: requiereBaterias ? document.getElementById('horas-respaldo')?.value : '',
-            consumoBimestral: document.getElementById('consumo-bimestral').value,
-            pagoBimestral: document.getElementById('pago-bimestral').value,
-            motivo: document.getElementById('motivo').value,
+            numBaterias: requiereBaterias === 'si' ? (document.getElementById('num-baterias')?.value || '') : '',
+            ultimoConsumoMes: document.getElementById('consumo-bimestral').value,
+            consumo6Meses: document.getElementById('pago-bimestral').value,
+            motivo,
 
             // Análisis Solar y Geolocalización
             analisisSolar: {
@@ -1452,6 +1578,7 @@
             // Checklist
             checklist: {},
             tipoTecho: document.getElementById('tipo-techo').value,
+            tipoObstaculos: document.getElementById('tipo-obstaculos')?.value || '',
             observacionesChecklist: document.getElementById('observaciones-checklist').value,
             distanciaTableroPaneles: document.getElementById('distancia-tablero-paneles')?.value || '',
             transformadorPotencia: document.getElementById('transformador-potencia')?.value || '',
@@ -1473,9 +1600,11 @@
             // Fotos
             fotos: photos.slice(),
             fotosTecho: techoPhotos.slice(),
+            fotosTablero: tableroPhotos.slice(),
             fotosTransformador: transformadorPhotos.slice(),
             fotosRecibo: reciboPhotos.slice(),
             fotosArea1: area1Photos.slice(),
+            fotosEquipo: equipoPhotos.slice(),
             observacionesFotos: document.getElementById('observaciones-fotos').value,
             // Brújula solar (imagen del canvas)
             brujulaSolarImg: (() => {
