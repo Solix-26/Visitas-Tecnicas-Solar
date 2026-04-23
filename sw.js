@@ -1,5 +1,5 @@
-// Service Worker para Visita Técnica Solar - Solix SAS
-const CACHE_NAME = 'visita-solar-v4';
+// Service Worker para Visita Técnica Solar - Ecowatt E.S.P
+const CACHE_NAME = 'visita-solar-v5';
 const urlsToCache = [
     '/',
     '/index.html',

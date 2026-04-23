@@ -1,7 +1,7 @@
 {
-    "name": "Solix SAS - Visita Técnica Solar",
-    "short_name": "Solix VT",
-    "description": "App Solix SAS para registro de visitas técnicas de instalación de paneles solares",
+    "name": "Ecowatt E.S.P - Visita Técnica Solar",
+    "short_name": "Ecowatt VT",
+    "description": "App Ecowatt E.S.P para registro de visitas técnicas de instalación de paneles solares",
     "start_url": "./index.html",
     "scope": "./",
     "display": "standalone",
