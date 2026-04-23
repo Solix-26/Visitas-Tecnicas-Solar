@@ -45,41 +45,137 @@ body {
     display: flex; flex-direction: column; align-items: center;
 }
 
-/* Logo wrapper con efecto de brillo */
-.logo-wrapper {
+/* ===== SPLASH: Dos logos ===== */
+.splash-logos {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+}
+
+.splash-logo-wrap {
     position: relative;
     overflow: hidden;
     padding: 10px;
 }
 
-.solix-logo-img {
-    width: 300px; height: auto;
+.splash-logo {
+    width: 140px; height: auto;
     display: block;
-    opacity: 0; transform: scale(0.9);
-    animation: logoEntrada 0.8s ease-out forwards,
-               latidoSuave 3s ease-in-out infinite 0.8s;
 }
 
-/* Brillo que recorre el logo */
-.logo-wrapper::after {
+/* Brillo deslizante sobre cada logo */
+.splash-logo-wrap::after {
     content: "";
     position: absolute;
     top: 0; left: -150%;
     width: 100%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
     transform: skewX(-20deg);
-    animation: brilloPasando 2s infinite 1s;
+    animation: brilloPasando 2.4s infinite;
+}
+.splash-logo-wrap:last-child::after { animation-delay: 1.2s; }
+
+/* Logo izquierdo: entra desde la izquierda */
+.splash-logo-left {
+    opacity: 0;
+    animation: entradaIzq 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s forwards,
+               flotar 4s ease-in-out infinite 1s;
 }
 
-@keyframes logoEntrada {
-    to { opacity: 1; transform: scale(1); }
+/* Logo derecho: entra desde la derecha */
+.splash-logo-right {
+    opacity: 0;
+    animation: entradaDer 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) 0.35s forwards,
+               flotar 4s ease-in-out infinite 1.15s;
 }
-@keyframes latidoSuave {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.04); }
+
+/* Divisor central animado */
+.splash-divider {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    animation: fadeIn 0.5s ease 0.8s forwards;
+    margin: 0 4px;
+}
+.splash-divider-line {
+    width: 2px; height: 60px;
+    background: linear-gradient(to bottom,
+        transparent 0%,
+        #1B2E5A 25%,
+        #F7941D 50%,
+        #1B2E5A 75%,
+        transparent 100%);
+    animation: brilloLinea 2s ease-in-out infinite 1s;
+}
+.splash-divider-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #F7941D;
+    animation: pulsoDot 2s ease-in-out infinite 1s;
+}
+
+@keyframes entradaIzq {
+    from { opacity: 0; transform: translateX(-70px) scale(0.8); }
+    to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes entradaDer {
+    from { opacity: 0; transform: translateX(70px) scale(0.8); }
+    to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes flotar {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-7px); }
+}
+@keyframes brilloLinea {
+    0%, 100% { opacity: 0.5; }
+    50%       { opacity: 1; box-shadow: 0 0 8px #F7941D; }
+}
+@keyframes pulsoDot {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50%       { transform: scale(1.5); opacity: 1; }
 }
 @keyframes brilloPasando {
     to { left: 150%; }
+}
+
+/* ===== HEADER: Dos logos ===== */
+.header-logos-duo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.header-logo-sep {
+    width: 1px; height: 32px;
+    background: linear-gradient(to bottom, transparent, var(--primary), var(--accent), var(--primary), transparent);
+    opacity: 0.5;
+}
+
+/* ===== LOGIN: Dos logos ===== */
+.login-logos-duo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 1rem;
+}
+.login-logo-duo {
+    height: 60px; width: auto;
+    object-fit: contain;
+    opacity: 0;
+    animation: entradaIzq 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.1s forwards;
+}
+.login-logo-duo-right {
+    animation-name: entradaDer;
+    animation-delay: 0.2s;
+}
+.login-logo-sep {
+    width: 1px; height: 44px;
+    background: linear-gradient(to bottom, transparent, var(--primary), var(--accent), var(--primary), transparent);
+    opacity: 0.4;
+    flex-shrink: 0;
 }
 
 /* Barra de carga */

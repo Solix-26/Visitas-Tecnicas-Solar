@@ -26,9 +26,17 @@
     <!-- ========== SPLASH SCREEN ========== -->
     <div id="splash-screen" class="splash-screen">
         <div class="splash-content">
-            <!-- Logo real Ecowatt E.S.P con efecto de brillo -->
-            <div class="logo-wrapper">
-                <img src="icons/logo-ecowatt.png" alt="Ecowatt E.S.P" class="solix-logo-img">
+            <div class="splash-logos">
+                <div class="splash-logo-wrap">
+                    <img src="icons/logo-ecowatt.png" alt="Ecowatt E.S.P" class="splash-logo splash-logo-left">
+                </div>
+                <div class="splash-divider">
+                    <div class="splash-divider-line"></div>
+                    <div class="splash-divider-dot"></div>
+                </div>
+                <div class="splash-logo-wrap">
+                    <img src="icons/logo-solix.png" alt="Solix SAS" class="splash-logo splash-logo-right">
+                </div>
             </div>
 
             <div class="loader-container">
@@ -37,15 +45,17 @@
             </div>
         </div>
         <div class="splash-bottom">
-            <p class="splash-version">SOLIX SAS v2.0</p>
+            <p class="splash-version">ECOWATT E.S.P · SOLIX SAS v2.0</p>
         </div>
     </div>
 
     <!-- ========== LOGIN SCREEN ========== -->
     <div id="login-screen" class="login-screen" style="display:none;">
         <div class="login-container">
-            <div class="login-logo">
-                <img src="icons/logo-ecowatt.png" alt="Ecowatt E.S.P">
+            <div class="login-logos-duo">
+                <img src="icons/logo-ecowatt.png" alt="Ecowatt E.S.P" class="login-logo-duo login-logo-duo-left">
+                <div class="login-logo-sep"></div>
+                <img src="icons/logo-solix.png" alt="Solix SAS" class="login-logo-duo login-logo-duo-right">
             </div>
             <h1 class="login-title">Visita Técnica</h1>
             <p class="login-subtitle">Ingresa con tu cuenta para continuar</p>
@@ -73,7 +83,11 @@
     <!-- ========== HEADER ========== -->
     <header class="app-header" id="app-header" style="display:none;">
         <div class="header-content">
-            <img src="icons/logo-ecowatt.png" alt="Ecowatt E.S.P" class="header-logo">
+            <div class="header-logos-duo">
+                <img src="icons/logo-ecowatt.png" alt="Ecowatt E.S.P" class="header-logo">
+                <div class="header-logo-sep"></div>
+                <img src="icons/logo-solix.png" alt="Solix SAS" class="header-logo">
+            </div>
         </div>
         <button id="btn-menu" class="btn-icon" title="Menú">☰</button>
     </header>

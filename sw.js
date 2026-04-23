@@ -1,5 +1,5 @@
 // Service Worker para Visita Técnica Solar - Ecowatt E.S.P
-const CACHE_NAME = 'visita-solar-v5';
+const CACHE_NAME = 'visita-solar-v6';
 const urlsToCache = [
     '/',
     '/index.html',
@@ -8,7 +8,8 @@ const urlsToCache = [
     '/js/xlsx.full.min.js',
     '/manifest.json',
     '/icons/icon-192.png',
-    '/icons/logo-solix.png'
+    '/icons/logo-solix.png',
+    '/icons/logo-ecowatt.png'
 ];
 
 // Instalar Service Worker
