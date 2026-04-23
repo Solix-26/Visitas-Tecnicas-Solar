@@ -15,6 +15,12 @@
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <!-- FileSaver para descargar archivos -->
     <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <!-- Firebase Authentication -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth.js"></script>
 </head>
 <body>
     <!-- ========== SPLASH SCREEN ========== -->
@@ -32,6 +38,34 @@
         </div>
         <div class="splash-bottom">
             <p class="splash-version">SOLIX SAS v2.0</p>
+        </div>
+    </div>
+
+    <!-- ========== LOGIN SCREEN ========== -->
+    <div id="login-screen" class="login-screen" style="display:none;">
+        <div class="login-container">
+            <div class="login-logo">
+                <img src="icons/logo-solix.png" alt="Solix SAS">
+            </div>
+            <h1 class="login-title">Visita Técnica</h1>
+            <p class="login-subtitle">Ingresa con tu cuenta para continuar</p>
+
+            <form id="login-form" class="login-form" novalidate>
+                <div class="login-field">
+                    <label for="login-email">Correo electrónico</label>
+                    <input type="email" id="login-email" placeholder="usuario@solix.com"
+                        autocomplete="email" required>
+                </div>
+                <div class="login-field">
+                    <label for="login-password">Contraseña</label>
+                    <input type="password" id="login-password" placeholder="••••••••"
+                        autocomplete="current-password" required>
+                </div>
+                <p id="login-error" class="login-error" role="alert"></p>
+                <button type="submit" id="btn-login-submit" class="btn-login-submit">Ingresar</button>
+            </form>
+
+            <p class="login-footer">Solix SAS &copy; 2026</p>
         </div>
     </div>
 
@@ -54,8 +88,14 @@
             <a href="#" data-action="historial">📂 Historial de Visitas</a>
             <a href="#" data-action="exportar-todo">📊 Exportar Todo a Excel</a>
             <a href="#" data-action="configuracion">⚙️ Configuración</a>
+            <a href="#" data-action="admin-usuarios" id="nav-admin-usuarios" style="display:none;">👥 Gestionar Usuarios</a>
         </nav>
         <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <p class="sidebar-user-label">Sesión activa</p>
+                <p id="sidebar-user-email" class="sidebar-user-email">—</p>
+            </div>
+            <button id="btn-logout" class="btn-logout">⎋ Cerrar sesión</button>
             <p>Solix SAS &copy; 2026</p>
         </div>
     </div>
@@ -822,6 +862,38 @@
             </div>
         </div>
 
+        <!-- VISTA: Admin - Gestionar Usuarios -->
+        <div id="view-admin-usuarios" class="view">
+            <h2 class="section-title">👥 Gestionar Usuarios</h2>
+
+            <!-- Formulario agregar usuario -->
+            <div class="card admin-form-card">
+                <h3>Agregar nuevo usuario</h3>
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="admin-nuevo-nombre" placeholder="Nombre del técnico">
+                </div>
+                <div class="form-group">
+                    <label>Correo electrónico</label>
+                    <input type="email" id="admin-nuevo-email" placeholder="correo@empresa.com">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña temporal</label>
+                    <input type="password" id="admin-nuevo-password" placeholder="Mínimo 6 caracteres">
+                </div>
+                <p id="admin-form-error" class="admin-form-error"></p>
+                <button id="btn-admin-agregar" class="btn btn-primary">➕ Agregar usuario</button>
+            </div>
+
+            <!-- Lista de usuarios -->
+            <div class="card">
+                <h3>Usuarios registrados</h3>
+                <div id="admin-users-list" class="admin-users-list">
+                    <p class="hint">Cargando usuarios...</p>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <!-- Toast de notificaciones -->
@@ -830,15 +902,14 @@
     <!-- Splash Screen Script -->
     <script>
     (function() {
-        // Ocultar splash y mostrar app
         window.addEventListener('load', function() {
             var splash = document.getElementById('splash-screen');
-            var header = document.getElementById('app-header');
             setTimeout(function() {
                 if (splash) splash.style.opacity = '0';
-                if (header) header.style.display = 'flex';
                 setTimeout(function() {
                     if (splash) splash.style.display = 'none';
+                    // Delega a auth.js qué pantalla mostrar según sesión
+                    if (window.onSplashComplete) window.onSplashComplete();
                 }, 600);
             }, 2500);
         });
@@ -847,6 +918,7 @@
 
     <!-- Scripts -->
     <script src="js/app.js"></script>
+    <script src="js/admin.js"></script>
 
     <script>
     if ('serviceWorker' in navigator) {

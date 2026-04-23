@@ -1,5 +1,5 @@
 // Service Worker para Visita Técnica Solar - Solix SAS
-const CACHE_NAME = 'visita-solar-v1';
+const CACHE_NAME = 'visita-solar-v3';
 const urlsToCache = [
     '/',
     '/index.html',

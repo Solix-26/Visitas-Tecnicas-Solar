@@ -332,6 +332,10 @@
                         document.getElementById('view-configuracion').classList.add('active');
                         updateConfigInfo();
                         break;
+                    case 'admin-usuarios':
+                        document.getElementById('view-admin-usuarios').classList.add('active');
+                        if (window.adminCargarUsuarios) window.adminCargarUsuarios();
+                        break;
                 }
                 closeSidebar();
             });
