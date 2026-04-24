@@ -149,9 +149,12 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
 }
 .header-logo-sep {
     width: 1px; height: 32px;
+    flex-shrink: 0;
     background: linear-gradient(to bottom, transparent, var(--primary), var(--accent), var(--primary), transparent);
     opacity: 0.5;
 }
@@ -231,7 +234,7 @@ body {
     border-bottom: 3px solid var(--primary);
 }
 .header-logo {
-    height: 42px; width: auto; object-fit: contain;
+    height: 42px; width: auto; object-fit: contain; flex-shrink: 0;
 }
 .app-header .btn-icon {
     color: var(--primary);

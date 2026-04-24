@@ -1169,17 +1169,25 @@
         // ── Helpers ───────────────────────────────────────────────
         function pageHeader(ws, title, cols) {
             const L = String.fromCharCode(64 + cols);
+            // Fila 1: Ambas empresas
             ws.mergeCells(`A1:${L}1`);
             const h = ws.getCell('A1');
-            h.value = '☀️  ECOWATT E.S.P  —  ' + title;
-            h.fill=fill(AZUL); h.font={name:'Calibri',bold:true,size:14,color:{argb:WHITE}};
-            h.alignment={horizontal:'center',vertical:'middle'}; ws.getRow(1).height=34;
+            h.value = '☀️  ECOWATT E.S.P   |   SOLIX SAS';
+            h.fill=fill(AZUL); h.font={name:'Calibri',bold:true,size:15,color:{argb:WHITE}};
+            h.alignment={horizontal:'center',vertical:'middle'}; ws.getRow(1).height=32;
+            // Fila 2: Título del informe
             ws.mergeCells(`A2:${L}2`);
-            const s = ws.getCell('A2');
+            const t = ws.getCell('A2');
+            t.value = title;
+            t.fill=fill('FF2E4A80'); t.font={name:'Calibri',bold:true,size:12,color:{argb:'FFFFF3E0'}};
+            t.alignment={horizontal:'center',vertical:'middle'}; ws.getRow(2).height=26;
+            // Fila 3: Metadata
+            ws.mergeCells(`A3:${L}3`);
+            const s = ws.getCell('A3');
             s.value = 'Generado: ' + new Date().toLocaleString('es-CO') + '   —   Cliente: ' + (data.cliente||'') + '   —   Fecha visita: ' + (data.fecha||'');
             s.fill=fill(AZULM); s.font={name:'Calibri',size:9,italic:true,color:{argb:WHITE}};
-            s.alignment={horizontal:'center'}; ws.getRow(2).height=15;
-            ws.getRow(3).height=8;
+            s.alignment={horizontal:'center'}; ws.getRow(3).height=15;
+            ws.getRow(4).height=8;
         }
 
         function secH(ws, row, text, fillColor, cols) {
@@ -1254,7 +1262,7 @@
         // HOJA 1 — DATOS DEL CLIENTE
         // ══════════════════════════════════════════════════════════
         const ws2=workbook.addWorksheet('👤 Datos del Cliente');
-        let r=4;
+        let r=5;
         pageHeader(ws2,'DATOS DEL CLIENTE Y SITIO',3);
 
         secH(ws2,r++,'🗓️  INFORMACIÓN DE LA VISITA',AZUL,3);
@@ -1299,7 +1307,7 @@
         // HOJA 3 — EVALUACIÓN TÉCNICA
         // ══════════════════════════════════════════════════════════
         const ws3=workbook.addWorksheet('✅ Evaluación Técnica');
-        pageHeader(ws3,'EVALUACIÓN TÉCNICA DEL SITIO',2); r=4;
+        pageHeader(ws3,'EVALUACIÓN TÉCNICA DEL SITIO',2); r=5;
         const cl=data.checklist||{};
 
         secH(ws3,r++,'🏠  ESTRUCTURA DEL TECHO',AZUL,2);
@@ -1351,7 +1359,7 @@
         // HOJA 4 — ANÁLISIS SOLAR Y GEOLOCALIZACIÓN
         // ══════════════════════════════════════════════════════════
         const ws4=workbook.addWorksheet('☀️ Análisis Solar');
-        pageHeader(ws4,'ANÁLISIS SOLAR Y GEOLOCALIZACIÓN',3); r=4;
+        pageHeader(ws4,'ANÁLISIS SOLAR Y GEOLOCALIZACIÓN',3); r=5;
         const sol=data.analisisSolar||{};
 
         secH(ws4,r++,'📍  GEOLOCALIZACIÓN DEL SITIO',AZUL,3);
@@ -1403,7 +1411,7 @@
         // HOJA 5 — MEDICIONES DEL SITIO
         // ══════════════════════════════════════════════════════════
         const ws5=workbook.addWorksheet('📏 Mediciones');
-        pageHeader(ws5,'MEDICIONES DEL SITIO',3); r=4;
+        pageHeader(ws5,'MEDICIONES DEL SITIO',3); r=5;
         const med=data.mediciones||{};
 
         secH(ws5,r++,'📐  ÁREAS DISPONIBLES',AZUL,3);
@@ -1467,7 +1475,7 @@
         // HOJA 6 — CONCLUSIONES
         // ══════════════════════════════════════════════════════════
         const ws6=workbook.addWorksheet('📝 Conclusiones');
-        pageHeader(ws6,'CONCLUSIONES Y RECOMENDACIONES',2); r=4;
+        pageHeader(ws6,'CONCLUSIONES Y RECOMENDACIONES',2); r=5;
 
         secH(ws6,r++,'📋  CONCLUSIÓN DE LA VISITA',AZUL,2);
         ws6.getCell(`A${r}`).value='Descripción general / Observaciones:';
@@ -1510,13 +1518,13 @@
         const wsFotos=workbook.addWorksheet('📷 Fotos');
         pageHeader(wsFotos,'EVIDENCIA FOTOGRÁFICA',3);
         ['Categoría','Imagen','Descripción'].forEach((h,i)=>{
-            const c=wsFotos.getRow(4).getCell(i+1); c.value=h;
+            const c=wsFotos.getRow(5).getCell(i+1); c.value=h;
             c.fill=fill(AZUL); c.font={name:'Calibri',bold:true,size:10,color:{argb:WHITE}};
             c.border=bdr; c.alignment={horizontal:'center',vertical:'middle'};
         });
-        wsFotos.getRow(4).height=22;
+        wsFotos.getRow(5).height=22;
 
-        let fotoRow=5;
+        let fotoRow=6;
         const FOTO_H=90;
         const addFoto=(cat,desc,base64)=>{
             const fr=wsFotos.getRow(fotoRow);
@@ -1571,11 +1579,11 @@
             } catch(e) {}
         }
 
-        if (fotoRow===5) {
-            wsFotos.mergeCells('A5:C5');
-            wsFotos.getCell('A5').value='📭 Sin fotos adjuntas';
-            wsFotos.getCell('A5').alignment={horizontal:'center'}; wsFotos.getCell('A5').border=bdr;
-            wsFotos.getRow(5).height=30;
+        if (fotoRow===6) {
+            wsFotos.mergeCells('A6:C6');
+            wsFotos.getCell('A6').value='📭 Sin fotos adjuntas';
+            wsFotos.getCell('A6').alignment={horizontal:'center'}; wsFotos.getCell('A6').border=bdr;
+            wsFotos.getRow(6).height=30;
         }
         wsFotos.columns=[{width:20},{width:16},{width:40}];
 
