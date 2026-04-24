@@ -60,9 +60,13 @@ body {
 }
 
 .splash-logo {
-    width: 140px; height: auto;
     display: block;
+    object-fit: contain;
 }
+/* Ecowatt (portrait 480×576): darle más altura para que el texto se lea */
+.splash-logo-left  { height: 150px; width: auto; }
+/* Solix (landscape 700×270): más ancho, menos alto */
+.splash-logo-right { height: 70px;  width: auto; align-self: center; }
 
 /* Brillo deslizante sobre cada logo */
 .splash-logo-wrap::after {
@@ -101,7 +105,7 @@ body {
     margin: 0 4px;
 }
 .splash-divider-line {
-    width: 2px; height: 60px;
+    width: 2px; height: 130px;
     background: linear-gradient(to bottom,
         transparent 0%,
         #1B2E5A 25%,
@@ -162,17 +166,17 @@ body {
     margin-bottom: 1rem;
 }
 .login-logo-duo {
-    height: 60px; width: auto;
     object-fit: contain;
     opacity: 0;
     animation: entradaIzq 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.1s forwards;
 }
-.login-logo-duo-right {
-    animation-name: entradaDer;
-    animation-delay: 0.2s;
-}
+/* Ecowatt (portrait): altura generosa para que el texto se lea */
+.login-logo-duo-left  { height: 80px; width: auto; }
+/* Solix (landscape): más bajo para equilibrar visualmente */
+.login-logo-duo-right { height: 46px; width: auto; align-self: center;
+    animation-name: entradaDer; animation-delay: 0.2s; }
 .login-logo-sep {
-    width: 1px; height: 44px;
+    width: 1px; height: 72px;
     background: linear-gradient(to bottom, transparent, var(--primary), var(--accent), var(--primary), transparent);
     opacity: 0.4;
     flex-shrink: 0;
