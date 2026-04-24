@@ -869,7 +869,7 @@
                     <button type="button" class="btn btn-secondary btn-prev" data-prev="3">← Anterior</button>
                     <button type="button" id="btn-guardar" class="btn btn-success">💾 Guardar Visita</button>
                     <button type="button" id="btn-excel" class="btn btn-primary">📊 Descargar Excel</button>
-                    <button type="button" id="btn-onedrive" class="btn btn-onedrive">☁️ Subir a OneDrive</button>
+                    <button type="button" id="btn-onedrive" class="btn btn-onedrive">☁️ Subir a Google Drive</button>
                 </div>
             </section>
         </div>
@@ -938,33 +938,44 @@
             </div>
             
             <div class="config-section">
-                <h3>☁️ OneDrive — Envío automático</h3>
-                <p class="hint">Cualquier técnico podrá subir reportes al OneDrive de la empresa con un botón. <strong>Sin login por usuario.</strong> Solo el admin configura esto una vez.</p>
+                <h3>☁️ Subir a la nube — Google Drive (gratis)</h3>
+                <p class="hint">Cualquier técnico podrá subir reportes a Google Drive con un botón. <strong>Sin login por usuario.</strong> Solo el admin configura esto una vez — completamente gratis.</p>
                 <p id="onedrive-status" class="onedrive-status-text">Verificando...</p>
 
                 <details class="onedrive-setup-guide" open>
-                    <summary>📋 Configuración — Power Automate (5 minutos, una sola vez)</summary>
+                    <summary>📋 Configuración — Google Apps Script (10 minutos, una sola vez, GRATIS)</summary>
                     <ol class="setup-steps">
-                        <li>Abre <strong>make.powerautomate.com</strong> con la cuenta empresarial de Microsoft</li>
-                        <li>Clic en <strong>"Crear"</strong> → <strong>"Flujo de nube instantáneo"</strong></li>
-                        <li>Nombre: <em>Recibir Excel Visitas</em> → elige <strong>"Cuando se recibe una solicitud HTTP"</strong> → Crear</li>
-                        <li>En el disparador HTTP, en <strong>"Esquema JSON del cuerpo"</strong>, pega esto:
-                            <pre class="setup-code">{"type":"object","properties":{"fileName":{"type":"string"},"fileContent":{"type":"string"}}}</pre>
+                        <li>Abre <strong>script.google.com</strong> con cualquier cuenta de Google</li>
+                        <li>Clic en <strong>"Nuevo proyecto"</strong> → borra el código que aparece y pega este:
+                            <pre class="setup-code">function doPost(e) {
+  var data = JSON.parse(e.postData.contents);
+  var carpeta;
+  var iter = DriveApp.getFoldersByName('Visitas Técnicas Solar');
+  carpeta = iter.hasNext() ? iter.next() : DriveApp.createFolder('Visitas Técnicas Solar');
+  var bytes = Utilities.base64Decode(data.fileContent);
+  var blob = Utilities.newBlob(bytes,
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    data.fileName);
+  carpeta.createFile(blob);
+  return ContentService
+    .createTextOutput(JSON.stringify({status:'ok'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
                         </li>
-                        <li>Clic en <strong>"+ Nuevo paso"</strong> → busca <strong>"Crear archivo"</strong> de OneDrive for Business</li>
-                        <li>Ruta de la carpeta: <code>/Visitas Técnicas Solar</code> (créala en OneDrive si no existe)</li>
-                        <li>Nombre de archivo: selecciona el campo <strong>fileName</strong> del paso anterior</li>
-                        <li>Contenido del archivo: escribe la expresión <code>base64ToBinary(triggerBody()?['fileContent'])</code></li>
-                        <li>Clic en <strong>Guardar</strong> → aparece la <strong>URL HTTP POST</strong> → cópiala y pégala abajo</li>
+                        <li>Clic en <strong>Implementar → Nueva implementación</strong></li>
+                        <li>Tipo: <strong>Aplicación web</strong> → Ejecutar como: <em>Yo</em> → Quién tiene acceso: <strong>Cualquier usuario</strong></li>
+                        <li>Clic en <strong>Implementar</strong> → copia la <strong>URL de la aplicación web</strong> que aparece</li>
+                        <li>Pega esa URL en el campo de abajo y guarda</li>
                     </ol>
+                    <p style="margin-top:0.5rem;color:#2E7D32;font-size:0.85rem;">✅ Los archivos quedarán en Google Drive → carpeta <strong>Visitas Técnicas Solar</strong></p>
                 </details>
 
                 <div class="form-group" style="margin-top:0.8rem;">
-                    <label for="config-pa-url">URL de Power Automate (HTTP POST)</label>
-                    <input type="url" id="config-pa-url" placeholder="https://prod-XX.westus.logic.azure.com/workflows/...">
+                    <label for="config-pa-url">URL del Google Apps Script (o Power Automate si tienes Premium)</label>
+                    <input type="url" id="config-pa-url" placeholder="https://script.google.com/macros/s/.../exec">
                     <small>Esta URL es el único secreto — guárdala bien y no la compartas públicamente.</small>
                 </div>
-                <button type="button" id="btn-guardar-onedrive" class="btn btn-onedrive">💾 Guardar y activar OneDrive</button>
+                <button type="button" id="btn-guardar-onedrive" class="btn btn-onedrive">💾 Guardar y activar</button>
             </div>
 
             <div class="config-section card-accent">

@@ -39,7 +39,7 @@
 
             // Power Automate devuelve 200 o 202 (aceptado)
             if (resp.ok || resp.status === 202) {
-                if (window.showToast) showToast('✅ Enviado a OneDrive — carpeta: Visitas Técnicas Solar', 'success');
+                if (window.showToast) showToast('✅ Enviado a Google Drive — carpeta: Visitas Técnicas Solar', 'success');
                 actualizarEstadoUI(true);
                 return true;
             }
@@ -68,10 +68,10 @@
             el.innerHTML = '⚠️ Sin configurar — sigue los pasos abajo para activarlo';
             el.style.color = '#F9A825';
         } else if (ok) {
-            el.innerHTML = '✅ Conectado y funcionando correctamente';
+            el.innerHTML = '✅ Conectado y funcionando — archivos en Google Drive';
             el.style.color = '#2E7D32';
         } else {
-            el.innerHTML = '🔵 URL configurada — listo para subir archivos';
+            el.innerHTML = '🔵 URL configurada — listo para subir a Google Drive';
             el.style.color = '#0078D4';
         }
     }

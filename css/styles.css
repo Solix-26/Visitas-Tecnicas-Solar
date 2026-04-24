@@ -63,9 +63,9 @@ body {
     display: block;
     object-fit: contain;
 }
-/* Ambos logos horizontales — igual altura */
-.splash-logo-left  { height: 90px; width: auto; }
-.splash-logo-right { height: 90px; width: auto; align-self: center; }
+/* Ecowatt más alto para que su texto quede igual de visible que Solix */
+.splash-logo-left  { height: 120px; width: auto; }
+.splash-logo-right { height: 75px;  width: auto; align-self: center; }
 
 /* Brillo deslizante sobre cada logo */
 .splash-logo-wrap::after {
@@ -169,12 +169,12 @@ body {
     opacity: 0;
     animation: entradaIzq 0.6s cubic-bezier(0.34,1.56,0.64,1) 0.1s forwards;
 }
-/* Ambos logos horizontales — igual altura */
-.login-logo-duo-left  { height: 56px; width: auto; }
-.login-logo-duo-right { height: 56px; width: auto; align-self: center;
+/* Ecowatt más alto para que su texto quede igual de visible que Solix */
+.login-logo-duo-left  { height: 80px; width: auto; }
+.login-logo-duo-right { height: 50px; width: auto; align-self: center;
     animation-name: entradaDer; animation-delay: 0.2s; }
 .login-logo-sep {
-    width: 1px; height: 52px;
+    width: 1px; height: 76px;
     background: linear-gradient(to bottom, transparent, var(--primary), var(--accent), var(--primary), transparent);
     opacity: 0.4;
     flex-shrink: 0;
