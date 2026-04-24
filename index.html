@@ -869,7 +869,7 @@
                     <button type="button" class="btn btn-secondary btn-prev" data-prev="3">← Anterior</button>
                     <button type="button" id="btn-guardar" class="btn btn-success">💾 Guardar Visita</button>
                     <button type="button" id="btn-excel" class="btn btn-primary">📊 Descargar Excel</button>
-                    <button type="button" id="btn-onedrive" class="btn btn-onedrive">☁️ Subir a Google Drive</button>
+                    <button type="button" id="btn-onedrive" class="btn btn-onedrive">☁️ Subir a OneDrive</button>
                 </div>
             </section>
         </div>
@@ -938,44 +938,43 @@
             </div>
             
             <div class="config-section">
-                <h3>☁️ Subir a la nube — Google Drive (gratis)</h3>
-                <p class="hint">Cualquier técnico podrá subir reportes a Google Drive con un botón. <strong>Sin login por usuario.</strong> Solo el admin configura esto una vez — completamente gratis.</p>
+                <h3>☁️ Subir a OneDrive — Microsoft 365</h3>
+                <p class="hint">Cualquier técnico podrá subir reportes a OneDrive con un botón. <strong>Sin login por usuario.</strong> El admin configura esto una vez — gratis con Microsoft 365, sin necesidad de Power Automate Premium.</p>
                 <p id="onedrive-status" class="onedrive-status-text">Verificando...</p>
 
                 <details class="onedrive-setup-guide" open>
-                    <summary>📋 Configuración — Google Apps Script (10 minutos, una sola vez, GRATIS)</summary>
+                    <summary>📋 Configuración — Azure AD App (15 minutos, una sola vez, incluido en M365)</summary>
                     <ol class="setup-steps">
-                        <li>Abre <strong>script.google.com</strong> con cualquier cuenta de Google</li>
-                        <li>Clic en <strong>"Nuevo proyecto"</strong> → borra el código que aparece y pega este:
-                            <pre class="setup-code">function doPost(e) {
-  var data = JSON.parse(e.postData.contents);
-  var carpeta;
-  var iter = DriveApp.getFoldersByName('Visitas Técnicas Solar');
-  carpeta = iter.hasNext() ? iter.next() : DriveApp.createFolder('Visitas Técnicas Solar');
-  var bytes = Utilities.base64Decode(data.fileContent);
-  var blob = Utilities.newBlob(bytes,
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    data.fileName);
-  carpeta.createFile(blob);
-  return ContentService
-    .createTextOutput(JSON.stringify({status:'ok'}))
-    .setMimeType(ContentService.MimeType.JSON);
-}</pre>
-                        </li>
-                        <li>Clic en <strong>Implementar → Nueva implementación</strong></li>
-                        <li>Tipo: <strong>Aplicación web</strong> → Ejecutar como: <em>Yo</em> → Quién tiene acceso: <strong>Cualquier usuario</strong></li>
-                        <li>Clic en <strong>Implementar</strong> → copia la <strong>URL de la aplicación web</strong> que aparece</li>
-                        <li>Pega esa URL en el campo de abajo y guarda</li>
+                        <li>Ve a <strong>portal.azure.com</strong> → <strong>Azure Active Directory</strong> → <strong>Registros de aplicaciones</strong> → <strong>Nuevo registro</strong></li>
+                        <li>Nombre: <em>Visitas Técnicas Ecowatt</em> → tipo de cuenta: <em>Solo esta organización</em> → Registrar</li>
+                        <li>Copia el <strong>Id. de directorio (inquilino)</strong> y el <strong>Id. de aplicación (cliente)</strong> — los necesitarás abajo</li>
+                        <li>Ve a <strong>Certificados y secretos</strong> → <strong>Nuevo secreto de cliente</strong> → pon caducidad 24 meses → Agregar → copia el <strong>Valor</strong> (solo se muestra una vez)</li>
+                        <li>Ve a <strong>Permisos de API</strong> → <strong>Agregar un permiso</strong> → Microsoft Graph → <strong>Permisos de aplicación</strong> → busca <code>Files.ReadWrite.All</code> → Agregar</li>
+                        <li>Clic en <strong>"Conceder consentimiento de administrador"</strong> → Sí</li>
+                        <li>En el campo <em>Correo OneDrive destino</em> escribe el email del usuario cuyo OneDrive recibirá los archivos (ej: <code>admin@empresa.com</code>)</li>
+                        <li>Completa los campos abajo y guarda</li>
                     </ol>
-                    <p style="margin-top:0.5rem;color:#2E7D32;font-size:0.85rem;">✅ Los archivos quedarán en Google Drive → carpeta <strong>Visitas Técnicas Solar</strong></p>
+                    <p style="margin-top:0.5rem;color:#2E7D32;font-size:0.85rem;">✅ Los archivos quedarán en <strong>OneDrive → Visitas Técnicas Solar</strong> del correo indicado</p>
                 </details>
 
                 <div class="form-group" style="margin-top:0.8rem;">
-                    <label for="config-pa-url">URL del Google Apps Script (o Power Automate si tienes Premium)</label>
-                    <input type="url" id="config-pa-url" placeholder="https://script.google.com/macros/s/.../exec">
-                    <small>Esta URL es el único secreto — guárdala bien y no la compartas públicamente.</small>
+                    <label for="config-ms-tenant-id">ID de Directorio (Tenant ID)</label>
+                    <input type="text" id="config-ms-tenant-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
                 </div>
-                <button type="button" id="btn-guardar-onedrive" class="btn btn-onedrive">💾 Guardar y activar</button>
+                <div class="form-group">
+                    <label for="config-ms-client-id">ID de Aplicación (Client ID)</label>
+                    <input type="text" id="config-ms-client-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                </div>
+                <div class="form-group">
+                    <label for="config-ms-client-secret">Secreto de cliente (Client Secret)</label>
+                    <input type="password" id="config-ms-client-secret" placeholder="El valor del secreto (no el ID)">
+                </div>
+                <div class="form-group">
+                    <label for="config-ms-drive-user">Correo OneDrive destino</label>
+                    <input type="email" id="config-ms-drive-user" placeholder="admin@tuempresa.com">
+                    <small>Archivos se guardarán en el OneDrive de este usuario, carpeta "Visitas Técnicas Solar".</small>
+                </div>
+                <button type="button" id="btn-guardar-onedrive" class="btn btn-onedrive">💾 Guardar configuración OneDrive</button>
             </div>
 
             <div class="config-section card-accent">

@@ -1201,8 +1201,8 @@
         
         addRow('Proveedor', data.proveedorEnergia, 'No. Servicio', data.numeroServicio);
         addRow('Tarifa CFE', data.tarifaCFE, 'kW Contratados', data.kilovatiosContratados);
-        addRow('Consumo Bimestral', (data.consumoBimestral || '-') + ' kWh', 'Pago Bimestral', '$' + (data.pagoBimestral || '0'));
-        addRow('Requiere Baterías', data.requiereBaterias ? 'Sí' : 'No', 'Horas Respaldo', data.horasRespaldo || 'N/A');
+        addRow('Último Consumo (kWh)', (data.ultimoConsumoMes || '-') + ' kWh', 'Consumo 6 Meses (kWh)', (data.consumo6Meses || '-') + ' kWh');
+        addRow('Requiere Baterías', data.requiereBaterias === 'si' ? 'Sí' : (data.requiereBaterias === 'no' ? 'No' : '-'), 'Num. Baterías', data.numBaterias || '-');
         
         // Motivo
         row++;
@@ -1567,8 +1567,9 @@
         const motivo = motivoSelect === 'otro' ? motivoOtro : motivoSelect;
 
         // Obtener datos del análisis solar
-        const coordsEl = document.getElementById('solar-coords');
-        const precisionEl = document.getElementById('solar-precision');
+        const latEl = document.getElementById('solar-lat');
+        const lngEl = document.getElementById('solar-lng');
+        const accuracyEl = document.getElementById('solar-accuracy');
         const altitudeEl = document.getElementById('solar-altitude');
 
         const data = {
@@ -1592,8 +1593,10 @@
 
             // Análisis Solar y Geolocalización
             analisisSolar: {
-                coordenadas: coordsEl ? coordsEl.textContent : '',
-                precisionGPS: precisionEl ? precisionEl.textContent : '',
+                coordenadas: (latEl && lngEl && latEl.textContent !== '--')
+                    ? (latEl.textContent.trim() + ', ' + lngEl.textContent.trim())
+                    : (document.getElementById('gps-coords')?.value || ''),
+                precisionGPS: accuracyEl ? accuracyEl.textContent : '',
                 altitud: altitudeEl ? altitudeEl.textContent : '',
                 // Trayectoria Solar
                 amanecer: document.getElementById('sun-rise-time')?.textContent || '',
