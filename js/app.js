@@ -1100,11 +1100,49 @@
                 generarExcel(data);
             });
         }
+
+        const btnOneDrive = document.getElementById('btn-onedrive');
+        if (btnOneDrive) {
+            btnOneDrive.addEventListener('click', async () => {
+                const data = recolectarDatos();
+                if (!data.cliente) { showToast('Completa al menos el nombre del cliente', 'error'); return; }
+                btnOneDrive.disabled = true;
+                btnOneDrive.textContent = '⏳ Generando...';
+                try {
+                    const buffer = await generarExcelBuffer(data);
+                    const fileName = 'Visita_' + (data.cliente || 'cliente').replace(/\s+/g, '_') + '_' + data.fecha + '.xlsx';
+                    if (window.subirAOneDrive) {
+                        btnOneDrive.textContent = '⏳ Subiendo...';
+                        await window.subirAOneDrive(buffer, fileName);
+                    } else {
+                        showToast('OneDrive no disponible', 'error');
+                    }
+                } finally {
+                    btnOneDrive.disabled = false;
+                    btnOneDrive.textContent = '☁️ Subir a OneDrive';
+                }
+            });
+        }
+    }
+
+    async function generarExcelBuffer(data) {
+        const workbook = await construirWorkbookVisita(data);
+        return workbook.xlsx.writeBuffer();
     }
 
     function generarExcel(data) {
+        construirWorkbookVisita(data).then(workbook => {
+            const fileName = 'Visita_Solar_' + (data.cliente || 'cliente').replace(/\s+/g, '_') + '_' + data.fecha + '.xlsx';
+            workbook.xlsx.writeBuffer().then(buffer => {
+                saveAs(new Blob([buffer]), fileName);
+                showToast('📊 Excel descargado: ' + fileName, 'success');
+            });
+        });
+    }
+
+    async function construirWorkbookVisita(data) {
         const workbook = new ExcelJS.Workbook();
-        workbook.creator = 'Solix SAS - Visita Técnica Solar';
+        workbook.creator = 'Ecowatt E.S.P - Visita Técnica Solar';
         workbook.created = new Date();
         
         // Estilos comunes
@@ -1519,12 +1557,7 @@
         
         wsFotos.columns = [{ width: 18 }, { width: 16 }, { width: 35 }];
 
-        // Guardar archivo
-        const fileName = 'Visita_Solar_' + (data.cliente || 'cliente').replace(/\s+/g, '_') + '_' + data.fecha + '.xlsx';
-        workbook.xlsx.writeBuffer().then(buffer => {
-            saveAs(new Blob([buffer]), fileName);
-            showToast('📊 Excel descargado: ' + fileName, 'success');
-        });
+        return workbook;
     }
     // ========== RECOLECTAR DATOS ==========
     function recolectarDatos() {
@@ -1657,52 +1690,232 @@
         return data;
     }
 
-    function exportarTodoExcel() {
+    async function exportarTodoExcel() {
         const visitas = JSON.parse(localStorage.getItem('visitas_solar') || '[]');
-        if (visitas.length === 0) {
-            showToast('No hay visitas guardadas para exportar', 'error');
-            return;
-        }
+        if (visitas.length === 0) { showToast('No hay visitas guardadas para exportar', 'error'); return; }
 
-        const workbook = new ExcelJS.Workbook();
-        const ws = workbook.addWorksheet('Todas las Visitas');
-        ws.addRow(['ID', 'Fecha', 'Hora', 'Cliente', 'Email', 'Teléfono', 'Dirección', 'GPS',
-            'Asesor', 'Tipo Cliente', 'Tarifa CFE', 'kW Contratados',
-            'Requiere Baterías', 'Horas Respaldo',
-            'Consumo Bimestral kWh', 'Pago Bimestral COP',
-            'Tipo Techo',
-            'Distancia tablero-paneles (m)', 'Potencia transformador (kVA)',
-            'Área Útil m²', 'Inclinación°', 'Azimut°', 'HSP', 'Irradiancia',
-            'Voltaje Red V',
-            'Viabilidad',
-            'Observaciones', 'Recomendaciones']);
+        const wb = new ExcelJS.Workbook();
+        wb.creator = 'Ecowatt E.S.P - Visita Técnica Solar';
+        wb.created = new Date();
 
-        visitas.forEach(v => {
-            ws.addRow([
-                v.id, v.fecha, v.hora, v.cliente, v.email, v.telefono, v.direccion, v.gps,
-                v.responsableVisita, v.tipoCliente, v.tarifaCFE, v.kilovatiosContratados,
-                v.requiereBaterias ? 'Sí' : 'No', v.requiereBaterias ? v.horasRespaldo : '',
-                v.consumoBimestral, v.pagoBimestral,
-                v.tipoTecho,
-                v.distanciaTableroPaneles, v.transformadorPotencia,
-                v.mediciones?.areaUtil, v.mediciones?.inclinacionTecho, v.mediciones?.azimut,
-                v.mediciones?.horasSolarPico, v.mediciones?.irradiancia,
-                v.mediciones?.voltajeRed,
-                v.viabilidad,
-                v.observacionesGenerales, v.recomendaciones
-            ]);
-        });
-        ws.columns = [
-            { width: 10 }, { width: 10 }, { width: 8 }, { width: 18 }, { width: 18 }, { width: 14 }, { width: 18 }, { width: 18 },
-            { width: 14 }, { width: 12 }, { width: 10 }, { width: 10 }, { width: 8 }, { width: 10 }, { width: 12 }, { width: 14 },
-            { width: 12 }, { width: 18 }, { width: 14 }, { width: 10 }, { width: 10 }, { width: 10 }, { width: 10 }, { width: 10 },
-            { width: 10 }, { width: 12 }, { width: 18 }, { width: 18 }
+        const C = { azul: '1B2E5A', azulMed: '2E4A80', naranja: 'F7941D', verde: '2E7D32',
+                    amarillo: 'F9A825', rojo: 'C62828', celeste: '00A3E0',
+                    lightBlue: 'E8EDF5', lightOrange: 'FFF3E0', lightGreen: 'E8F5E9',
+                    white: 'FFFFFF', gris: 'F5F5F5' };
+
+        const fill  = c => ({ type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + c } });
+        const fBlue = fill(C.azul);
+        const fOrange = fill(C.naranja);
+        const fGreen = fill(C.verde);
+        const fLightBlue = fill(C.lightBlue);
+        const fGray = fill(C.gris);
+        const wFont = { name: 'Calibri', color: { argb: 'FFFFFFFF' }, bold: true, size: 11 };
+        const bdr = { top:{style:'thin',color:{argb:'FFCCCCCC'}}, left:{style:'thin',color:{argb:'FFCCCCCC'}},
+                      bottom:{style:'thin',color:{argb:'FFCCCCCC'}}, right:{style:'thin',color:{argb:'FFCCCCCC'}} };
+
+        const addTitleRow = (ws, cols, text, fillColor) => {
+            ws.mergeCells('A1:' + String.fromCharCode(64 + cols) + '1');
+            const c = ws.getCell('A1');
+            c.value = text; c.font = { ...wFont, size: 13 };
+            c.fill = fill(fillColor); c.alignment = { horizontal:'center', vertical:'middle' };
+            ws.getRow(1).height = 32;
+            ws.mergeCells('A2:' + String.fromCharCode(64 + cols) + '2');
+            const c2 = ws.getCell('A2');
+            c2.value = 'Generado: ' + new Date().toLocaleString('es-CO') + '  —  Total visitas: ' + visitas.length;
+            c2.font = { name:'Calibri', size:9, italic:true, color:{argb:'FFFFFFFF'} };
+            c2.fill = fill(C.azulMed); c2.alignment = { horizontal:'center' };
+            ws.getRow(2).height = 16;
+        };
+
+        const addHeaderRow = (ws, rowN, headers, fillColor) => {
+            const row = ws.getRow(rowN);
+            headers.forEach((h, i) => {
+                const cell = row.getCell(i + 1);
+                cell.value = h; cell.font = wFont; cell.fill = fill(fillColor);
+                cell.alignment = { horizontal:'center', vertical:'middle', wrapText:true };
+                cell.border = bdr;
+            });
+            row.height = 24;
+        };
+
+        const styleDataRow = (row, even) => {
+            row.eachCell({ includeEmpty:true }, cell => {
+                cell.border = bdr;
+                cell.font = { name:'Calibri', size:10 };
+                if (even) cell.fill = fLightBlue;
+                cell.alignment = { vertical:'middle', wrapText:true };
+            });
+            row.height = 18;
+        };
+
+        // ========== HOJA 1: RESUMEN GENERAL ==========
+        const ws1 = wb.addWorksheet('📊 Resumen General');
+        addTitleRow(ws1, 9, '☀️ ECOWATT E.S.P — HISTORIAL DE VISITAS TÉCNICAS SOLARES', C.azul);
+
+        // Stats block
+        const viabs = visitas.reduce((a, v) => { a[v.viabilidad||'?'] = (a[v.viabilidad||'?']||0)+1; return a; }, {});
+        const statsData = [
+            ['Total de visitas', visitas.length, 'Proyectos excelentes', viabs['excelente']||0],
+            ['Proyectos buenos', viabs['bueno']||0, 'Proyectos regulares', viabs['regular']||0],
+            ['Clientes residenciales', visitas.filter(v=>v.tipoCliente==='residencial').length,
+             'Clientes comerciales', visitas.filter(v=>v.tipoCliente==='comercial').length],
+            ['Clientes industriales', visitas.filter(v=>v.tipoCliente==='industrial').length,
+             'No viables', viabs['no-viable']||0],
         ];
-        const fileName = 'Historial_Visitas_Solar_' + new Date().toISOString().split('T')[0] + '.xlsx';
-        workbook.xlsx.writeBuffer().then(buffer => {
-            saveAs(new Blob([buffer]), fileName);
-            showToast('📊 Excel con todas las visitas descargado', 'success');
+        ws1.getRow(3).height = 8;
+        let r = 4;
+        statsData.forEach(([l1,v1,l2,v2]) => {
+            const row = ws1.getRow(r++);
+            [l1,v1,l2,v2,'','','','',''].forEach((val,i) => {
+                const cell = row.getCell(i+1);
+                cell.value = val; cell.border = bdr;
+                if (i===0||i===2) { cell.fill=fLightBlue; cell.font={bold:true,size:10}; }
+                else if (i===1||i===3) { cell.font={bold:true,size:11,color:{argb:'FF'+C.azul}}; }
+            });
+            row.height = 20;
         });
+
+        ws1.getRow(r++).height = 8;
+        addHeaderRow(ws1, r++, ['#','Fecha','Hora','Cliente','Tipo','Asesor','Viabilidad','Último Consumo (kWh)','Motivo'], C.naranja);
+
+        const vColors = { excelente:C.verde, bueno:'1565C0', regular:C.amarillo, dificil:'E65100', 'no-viable':C.rojo };
+        visitas.forEach((v, idx) => {
+            const row = ws1.addRow([
+                idx+1, v.fecha, v.hora, v.cliente,
+                v.tipoCliente||'-', v.responsableVisita||'-',
+                v.viabilidad||'-',
+                v.ultimoConsumoMes || v.consumoBimestral || '-',
+                v.motivo||'-'
+            ]);
+            styleDataRow(row, idx%2===1);
+            if (v.viabilidad && vColors[v.viabilidad]) {
+                row.getCell(7).font = { bold:true, color:{argb:'FF'+vColors[v.viabilidad]}, size:10 };
+                if (v.viabilidad==='regular') row.getCell(7).font = { bold:true, color:{argb:'FF000000'}, size:10 };
+            }
+        });
+        ws1.columns = [{w:4},{w:11},{w:7},{w:22},{w:14},{w:18},{w:14},{w:14},{w:28}].map(o=>({width:o.w}));
+
+        // ========== HOJA 2: DATOS COMPLETOS DE CLIENTES ==========
+        const ws2 = wb.addWorksheet('👤 Datos Clientes');
+        addTitleRow(ws2, 14, '👤 DATOS COMPLETOS DE CLIENTES Y SITIOS', C.azul);
+        ws2.getRow(3).height = 8;
+        addHeaderRow(ws2, 4, [
+            'Fecha','Cliente','Email','Teléfono','Tipo Cliente','Dirección','GPS',
+            'Asesor','Proveedor Energía','No. Servicio','Tarifa CFE','kW Contratados',
+            'Req. Baterías','Num Baterías','Último Consumo (kWh)','Consumo 6 Meses (kWh)','Motivo/Interés'
+        ], C.azul);
+        visitas.forEach((v,idx) => {
+            const row = ws2.addRow([
+                v.fecha, v.cliente, v.email, v.telefono,
+                v.tipoCliente||'-', v.direccion, v.gps,
+                v.responsableVisita||'-', v.proveedorEnergia||'-', v.numeroServicio||'-',
+                v.tarifaCFE||'-', v.kilovatiosContratados||'-',
+                v.requiereBaterias==='si'?'Sí':v.requiereBaterias==='no'?'No':'-',
+                v.numBaterias||'-',
+                v.ultimoConsumoMes||v.consumoBimestral||'-',
+                v.consumo6Meses||v.pagoBimestral||'-',
+                v.motivo||'-'
+            ]);
+            styleDataRow(row, idx%2===1);
+        });
+        ws2.columns = [11,22,22,14,14,24,20,18,18,16,10,10,10,10,14,14,28].map(w=>({width:w}));
+
+        // ========== HOJA 3: EVALUACIÓN TÉCNICA ==========
+        const ws3 = wb.addWorksheet('✅ Evaluación Técnica');
+        addTitleRow(ws3, 19, '✅ EVALUACIÓN TÉCNICA DEL SITIO', C.verde);
+        ws3.getRow(3).height = 8;
+        const checkNames = ['techo-estado','carga-techo','impermeabilizacion','orientacion-sur',
+            'sombras','espacio','centro-carga','medidor','tierra','protecciones','ruta-cable',
+            'contrato-proveedor','acceso-medidor','acceso-techo','acceso-vehicular','andamio'];
+        const checkLabels2 = ['Estado techo','Capacidad carga','Impermeabilización','Orientación sur',
+            'Libre sombras','Espacio disponible','Centro carga/tablero','Medidor bidireccional',
+            'Tierra física','Protecciones','Ruta cableado','Contrato proveedor',
+            'Acceso medidor','Acceso techo','Acceso vehicular','Andamio'];
+        addHeaderRow(ws3, 4, ['Fecha','Cliente',...checkLabels2,'Tipo Obstáculos','Observaciones','Tipo Techo','Dist.Tablero-Paneles(m)'], C.verde);
+        const stTxt = { bien:'✅ BIEN', regular:'⚠️ REGULAR', mal:'❌ MAL', na:'➖ N/A', si:'Sí', no:'No' };
+        visitas.forEach((v,idx) => {
+            const checks = checkNames.map(k => stTxt[v.checklist?.[k]] || '-');
+            const row = ws3.addRow([v.fecha, v.cliente, ...checks,
+                v.tipoObstaculos||'-', v.observacionesChecklist||'-',
+                v.tipoTecho||'-', v.distanciaTableroPaneles||'-']);
+            styleDataRow(row, idx%2===1);
+        });
+        ws3.columns = [11,22,...checkNames.map(()=>({width:10})).map(o=>o.width),16,28,14,14].map(w=>({width:w}));
+
+        // ========== HOJA 4: MEDICIONES ==========
+        const ws4 = wb.addWorksheet('📏 Mediciones');
+        addTitleRow(ws4, 14, '📏 MEDICIONES Y DATOS TÉCNICOS', C.celeste);
+        ws4.getRow(3).height = 8;
+        addHeaderRow(ws4, 4, [
+            'Fecha','Cliente','Inclinación Techo (°)','Azimut (°)','Altura Techo (m)',
+            'HSP','Irradiancia (kWh/m²/día)','Voltaje Red (V)','Interruptor (A)',
+            'Calibre Acometida','Transformador (kVA)','GPS','Equipo Medición',
+            'Área 1 - Descripción','Área 1 - Largo (m)','Área 1 - Ancho (m)','Área 1 - Útil (m²)'
+        ], C.celeste);
+        visitas.forEach((v,idx) => {
+            const a1 = v.areas?.[0] || {};
+            const row = ws4.addRow([
+                v.fecha, v.cliente,
+                v.mediciones?.inclinacionTecho||'-', v.mediciones?.azimut||'-',
+                v.mediciones?.alturaTecho||'-', v.mediciones?.horasSolarPico||'-',
+                v.mediciones?.irradiancia||'-', v.mediciones?.voltajeRed||'-',
+                v.mediciones?.capacidadInterruptor||'-', v.mediciones?.calibreAcometida||'-',
+                v.transformadorPotencia||'-', v.gps||'-', v.equipoMedicion||'-',
+                a1.descripcion||'-', a1.largo||'-', a1.ancho||'-', a1.areaUtil||'-'
+            ]);
+            styleDataRow(row, idx%2===1);
+        });
+        ws4.columns = [11,22,12,10,10,8,14,10,10,14,12,20,22,20,10,10,10].map(w=>({width:w}));
+
+        // ========== HOJA 5: ANÁLISIS SOLAR ==========
+        const ws5 = wb.addWorksheet('☀️ Análisis Solar');
+        addTitleRow(ws5, 10, '☀️ ANÁLISIS SOLAR Y TRAYECTORIA', C.naranja);
+        ws5.getRow(3).height = 8;
+        addHeaderRow(ws5, 4, [
+            'Fecha','Cliente','Amanecer','Az.Amanecer','Cénit Solar','Elevación Cénit',
+            'Atardecer','Az.Atardecer','Horas de Luz','Orientación Óptima','Inclinación Óptima'
+        ], C.naranja);
+        visitas.forEach((v,idx) => {
+            const s = v.analisisSolar || {};
+            const row = ws5.addRow([
+                v.fecha, v.cliente,
+                s.amanecer||'-', s.amanecerAzimut||'-',
+                s.cenitSolar||'-', s.cenitElevacion||'-',
+                s.atardecer||'-', s.atardecerAzimut||'-',
+                s.horasLuz||'-', s.orientacionOptima||'-', s.inclinacionOptima||'-'
+            ]);
+            styleDataRow(row, idx%2===1);
+        });
+        ws5.columns = [11,22,10,12,10,14,10,12,10,20,14].map(w=>({width:w}));
+
+        // ========== HOJA 6: CONCLUSIONES ==========
+        const ws6 = wb.addWorksheet('📝 Conclusiones');
+        addTitleRow(ws6, 6, '📝 CONCLUSIONES Y RECOMENDACIONES', C.azul);
+        ws6.getRow(3).height = 8;
+        addHeaderRow(ws6, 4, ['Fecha','Cliente','Asesor','Viabilidad','Observaciones Generales','Recomendaciones'], C.azul);
+        visitas.forEach((v,idx) => {
+            const row = ws6.addRow([
+                v.fecha, v.cliente, v.responsableVisita||'-',
+                v.viabilidad||'-',
+                v.observacionesGenerales||'-', v.recomendaciones||'-'
+            ]);
+            styleDataRow(row, idx%2===1);
+            if (v.viabilidad && vColors[v.viabilidad]) {
+                const vCell = row.getCell(4);
+                vCell.font = { bold:true, color:{argb:'FF'+(v.viabilidad==='regular'?'000000':vColors[v.viabilidad])}, size:10 };
+            }
+        });
+        ws6.columns = [11,22,18,14,42,42].map(w=>({width:w}));
+
+        const fileName = 'Ecowatt_Historial_' + new Date().toISOString().split('T')[0] + '.xlsx';
+        const buffer = await wb.xlsx.writeBuffer();
+        saveAs(new Blob([buffer]), fileName);
+        showToast('📊 Excel completo descargado: ' + visitas.length + ' visitas — 6 hojas', 'success');
+
+        // Subir a OneDrive si está configurado
+        if (window.subirAOneDrive && window.estadoOneDrive && window.estadoOneDrive().configurado) {
+            await window.subirAOneDrive(buffer, fileName);
+        }
     }
 
     // ========== GOOGLE SHEETS SYNC ==========

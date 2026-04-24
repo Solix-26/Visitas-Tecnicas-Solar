@@ -338,7 +338,23 @@ body {
 .btn-success:hover { background: #1b5e20; }
 .btn-danger { background: var(--danger); color: white; }
 .btn-danger:hover { background: #b71c1c; }
+.btn-onedrive { background: #0078D4; color: #fff; border: none; border-radius: 8px;
+    padding: 0.65rem 1.1rem; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+    transition: background 0.2s; }
+.btn-onedrive:hover { background: #005a9e; }
+.btn-onedrive:disabled { background: #90CAF9; cursor: not-allowed; }
 .btn-small { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+
+/* OneDrive config */
+.onedrive-status-text { font-size: 0.9rem; font-weight: 600; margin: 0.4rem 0 0.8rem; }
+.onedrive-setup-guide {
+    background: var(--primary-light); border-radius: 8px;
+    padding: 0.5rem 0.8rem; margin-bottom: 0.6rem; font-size: 0.85rem;
+}
+.onedrive-setup-guide summary { cursor: pointer; font-weight: 600; color: var(--primary); }
+.setup-steps { margin: 0.6rem 0 0.2rem 1.2rem; line-height: 1.9; }
+.setup-steps code { background: #fff; padding: 0.1rem 0.3rem; border-radius: 4px;
+    font-size: 0.82rem; color: var(--primary); border: 1px solid var(--border); }
 
 .form-actions {
     display: flex; justify-content: space-between; gap: 0.8rem;

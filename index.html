@@ -15,6 +15,8 @@
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <!-- FileSaver para descargar archivos -->
     <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <!-- Microsoft MSAL para OneDrive -->
+    <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/dist/msal-browser.min.js"></script>
     <!-- Firebase Authentication -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -869,6 +871,7 @@
                     <button type="button" class="btn btn-secondary btn-prev" data-prev="3">← Anterior</button>
                     <button type="button" id="btn-guardar" class="btn btn-success">💾 Guardar Visita</button>
                     <button type="button" id="btn-excel" class="btn btn-primary">📊 Descargar Excel</button>
+                    <button type="button" id="btn-onedrive" class="btn btn-onedrive">☁️ Subir a OneDrive</button>
                 </div>
             </section>
         </div>
@@ -936,6 +939,31 @@
                 <button type="button" id="btn-guardar-preferencias" class="btn btn-primary">💾 Guardar Preferencias</button>
             </div>
             
+            <div class="config-section">
+                <h3>☁️ OneDrive — Microsoft 365</h3>
+                <p class="hint">Configura tu cuenta de Microsoft para guardar los reportes directamente en OneDrive.</p>
+                <p id="onedrive-status" class="onedrive-status-text">Verificando...</p>
+
+                <details class="onedrive-setup-guide">
+                    <summary>📋 ¿Cómo obtener el Client ID? (clic para ver)</summary>
+                    <ol class="setup-steps">
+                        <li>Ingresa a <strong>portal.azure.com</strong> con tu cuenta empresarial</li>
+                        <li>Busca <strong>"App registrations"</strong> → <strong>"New registration"</strong></li>
+                        <li>Nombre: <em>Visitas Técnicas Solar</em></li>
+                        <li>Tipo de cuenta: <em>"Accounts in any organizational directory and personal Microsoft accounts"</em></li>
+                        <li>Redirect URI: <em>Web</em> → la URL de tu app (ej: https://tu-usuario.github.io/visita-solar/)</li>
+                        <li>Clic en <strong>Register</strong> y copia el <strong>Application (client) ID</strong></li>
+                        <li>Ve a <strong>API permissions</strong> → Add → Microsoft Graph → Delegated → selecciona <code>Files.ReadWrite</code> y <code>User.Read</code></li>
+                    </ol>
+                </details>
+
+                <div class="form-group" style="margin-top:0.8rem;">
+                    <label for="config-onedrive-client-id">Application (Client) ID</label>
+                    <input type="text" id="config-onedrive-client-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                </div>
+                <button type="button" id="btn-guardar-onedrive" class="btn btn-onedrive">💾 Guardar Client ID</button>
+            </div>
+
             <div class="config-section card-accent">
                 <h3>📱 Información de la App</h3>
                 <p>Versión: 2.2.0 — Ecowatt E.S.P</p>
@@ -1001,6 +1029,7 @@
     <!-- Scripts -->
     <script src="js/app.js"></script>
     <script src="js/admin.js"></script>
+    <script src="js/onedrive.js"></script>
 
     <script>
     if ('serviceWorker' in navigator) {
