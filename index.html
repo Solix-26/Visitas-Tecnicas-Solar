@@ -15,8 +15,6 @@
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
     <!-- FileSaver para descargar archivos -->
     <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
-    <!-- Microsoft MSAL para OneDrive -->
-    <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/dist/msal-browser.min.js"></script>
     <!-- Firebase Authentication -->
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -940,28 +938,33 @@
             </div>
             
             <div class="config-section">
-                <h3>☁️ OneDrive — Microsoft 365</h3>
-                <p class="hint">Configura tu cuenta de Microsoft para guardar los reportes directamente en OneDrive.</p>
+                <h3>☁️ OneDrive — Envío automático</h3>
+                <p class="hint">Cualquier técnico podrá subir reportes al OneDrive de la empresa con un botón. <strong>Sin login por usuario.</strong> Solo el admin configura esto una vez.</p>
                 <p id="onedrive-status" class="onedrive-status-text">Verificando...</p>
 
-                <details class="onedrive-setup-guide">
-                    <summary>📋 ¿Cómo obtener el Client ID? (clic para ver)</summary>
+                <details class="onedrive-setup-guide" open>
+                    <summary>📋 Configuración — Power Automate (5 minutos, una sola vez)</summary>
                     <ol class="setup-steps">
-                        <li>Ingresa a <strong>portal.azure.com</strong> con tu cuenta empresarial</li>
-                        <li>Busca <strong>"App registrations"</strong> → <strong>"New registration"</strong></li>
-                        <li>Nombre: <em>Visitas Técnicas Solar</em></li>
-                        <li>Tipo de cuenta: <em>"Accounts in any organizational directory and personal Microsoft accounts"</em></li>
-                        <li>Redirect URI: <em>Web</em> → la URL de tu app (ej: https://tu-usuario.github.io/visita-solar/)</li>
-                        <li>Clic en <strong>Register</strong> y copia el <strong>Application (client) ID</strong></li>
-                        <li>Ve a <strong>API permissions</strong> → Add → Microsoft Graph → Delegated → selecciona <code>Files.ReadWrite</code> y <code>User.Read</code></li>
+                        <li>Abre <strong>make.powerautomate.com</strong> con la cuenta empresarial de Microsoft</li>
+                        <li>Clic en <strong>"Crear"</strong> → <strong>"Flujo de nube instantáneo"</strong></li>
+                        <li>Nombre: <em>Recibir Excel Visitas</em> → elige <strong>"Cuando se recibe una solicitud HTTP"</strong> → Crear</li>
+                        <li>En el disparador HTTP, en <strong>"Esquema JSON del cuerpo"</strong>, pega esto:
+                            <pre class="setup-code">{"type":"object","properties":{"fileName":{"type":"string"},"fileContent":{"type":"string"}}}</pre>
+                        </li>
+                        <li>Clic en <strong>"+ Nuevo paso"</strong> → busca <strong>"Crear archivo"</strong> de OneDrive for Business</li>
+                        <li>Ruta de la carpeta: <code>/Visitas Técnicas Solar</code> (créala en OneDrive si no existe)</li>
+                        <li>Nombre de archivo: selecciona el campo <strong>fileName</strong> del paso anterior</li>
+                        <li>Contenido del archivo: escribe la expresión <code>base64ToBinary(triggerBody()?['fileContent'])</code></li>
+                        <li>Clic en <strong>Guardar</strong> → aparece la <strong>URL HTTP POST</strong> → cópiala y pégala abajo</li>
                     </ol>
                 </details>
 
                 <div class="form-group" style="margin-top:0.8rem;">
-                    <label for="config-onedrive-client-id">Application (Client) ID</label>
-                    <input type="text" id="config-onedrive-client-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                    <label for="config-pa-url">URL de Power Automate (HTTP POST)</label>
+                    <input type="url" id="config-pa-url" placeholder="https://prod-XX.westus.logic.azure.com/workflows/...">
+                    <small>Esta URL es el único secreto — guárdala bien y no la compartas públicamente.</small>
                 </div>
-                <button type="button" id="btn-guardar-onedrive" class="btn btn-onedrive">💾 Guardar Client ID</button>
+                <button type="button" id="btn-guardar-onedrive" class="btn btn-onedrive">💾 Guardar y activar OneDrive</button>
             </div>
 
             <div class="config-section card-accent">
