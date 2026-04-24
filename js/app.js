@@ -1159,8 +1159,12 @@
 
         // Enlace Google Maps desde coordenadas
         const coordStr = data.analisisSolar?.coordenadas || data.gps || '';
-        const coordM   = coordStr.replace(/\s/g,'').match(/([-\d.]+),([-\d.]+)/);
-        const mapsUrl  = coordM ? `https://www.google.com/maps/search/?api=1&query=${coordM[1]},${coordM[2]}` : null;
+        // Extrae solo los números decimales para obtener coordenadas limpias
+        const coordNums   = coordStr.match(/-?\d+\.\d+/g) || [];
+        const coordClean  = coordNums.length >= 2 ? coordNums[0] + ', ' + coordNums[1] : coordStr;
+        const mapsUrl     = coordNums.length >= 2
+            ? `https://www.google.com/maps/search/?api=1&query=${coordNums[0]},${coordNums[1]}`
+            : null;
 
         // ── Helpers ───────────────────────────────────────────────
         function pageHeader(ws, title, cols) {
@@ -1247,49 +1251,11 @@
         const blank=(ws,row)=>{ ws.getRow(row).height=6; };
 
         // ══════════════════════════════════════════════════════════
-        // HOJA 1 — RESUMEN GENERAL
-        // ══════════════════════════════════════════════════════════
-        const ws1 = workbook.addWorksheet('📋 Resumen');
-        pageHeader(ws1, 'RESUMEN VISITA TÉCNICA SOLAR', 4);
-        let r=4;
-
-        secH(ws1,r++,'🗓️  INFORMACIÓN DE LA VISITA',AZUL,4);
-        addLV(ws1,r++,'Fecha de la Visita',data.fecha,BLUECL,4);
-        addLV(ws1,r++,'Hora',data.hora,BLUECL,4);
-        addLV(ws1,r++,'Asesor / Técnico Responsable',data.responsableVisita,BLUECL,4);
-        blank(ws1,r++);
-
-        secH(ws1,r++,'👤  CLIENTE',AZULM,4);
-        addLV(ws1,r++,'Nombre del Cliente / Empresa',data.cliente,BLUECL,4);
-        addLV(ws1,r++,'Tipo de Cliente',data.tipoCliente,BLUECL,4);
-        addLV(ws1,r++,'Correo Electrónico',data.email,BLUECL,4);
-        addLV(ws1,r++,'Teléfono',data.telefono,BLUECL,4);
-        addLV(ws1,r++,'Dirección de Instalación',data.direccion,BLUECL,4);
-        addLV(ws1,r++,'Coordenadas GPS',coordStr||data.gps,BLUECL,4);
-        if (mapsUrl) addHyperlink(ws1,r++,'📍 Ver en Google Maps','▶ Abrir ubicación del sitio en Google Maps',mapsUrl,CELESTCL,4);
-        blank(ws1,r++);
-
-        secH(ws1,r++,'⚡  CONSUMO',CELEST,4);
-        addLV(ws1,r++,'Último consumo del mes',(data.ultimoConsumoMes||'-')+' kWh',CELESTCL,4);
-        addLV(ws1,r++,'Consumo en los últimos 6 meses',(data.consumo6Meses||'-')+' kWh',CELESTCL,4);
-        addLV(ws1,r++,'Motivo / Interés del Cliente',data.motivo,CELESTCL,4);
-        blank(ws1,r++);
-
-        secH(ws1,r++,'🏆  VIABILIDAD DEL PROYECTO',VERDE,4);
-        ws1.mergeCells(`A${r}:D${r}`);
-        const vC1=ws1.getCell(`A${r}`);
-        vC1.value=vTxt[data.viabilidad]||(data.viabilidad||'Sin evaluar');
-        vC1.fill=fill(vFill[data.viabilidad]||'FF9E9E9E');
-        vC1.font={name:'Calibri',bold:true,size:16,color:{argb:data.viabilidad==='regular'?'FF000000':WHITE}};
-        vC1.alignment={horizontal:'center',vertical:'middle'}; vC1.border=bdr;
-        ws1.getRow(r).height=36;
-        ws1.columns=[{width:28},{width:36},{width:18},{width:18}];
-
-        // ══════════════════════════════════════════════════════════
-        // HOJA 2 — DATOS DEL CLIENTE
+        // HOJA 1 — DATOS DEL CLIENTE
         // ══════════════════════════════════════════════════════════
         const ws2=workbook.addWorksheet('👤 Datos del Cliente');
-        pageHeader(ws2,'DATOS DEL CLIENTE Y SITIO',3); r=4;
+        let r=4;
+        pageHeader(ws2,'DATOS DEL CLIENTE Y SITIO',3);
 
         secH(ws2,r++,'🗓️  INFORMACIÓN DE LA VISITA',AZUL,3);
         addLV(ws2,r++,'Fecha de la Visita',data.fecha,BLUECL,3);
@@ -1306,7 +1272,7 @@
 
         secH(ws2,r++,'📍  UBICACIÓN DEL SITIO',CELEST,3);
         addLV(ws2,r++,'Dirección de Instalación',data.direccion,CELESTCL,3);
-        addLV(ws2,r++,'Coordenadas GPS',coordStr||data.gps,CELESTCL,3);
+        addLV(ws2,r++,'Coordenadas GPS',coordClean,CELESTCL,3);
         if (mapsUrl) addHyperlink(ws2,r++,'📍 Google Maps','▶ Abrir ubicación en Google Maps',mapsUrl,CELESTCL,3);
         blank(ws2,r++);
 
@@ -1395,7 +1361,7 @@
             cA.value='Coordenadas GPS'; cA.fill=fill(CELESTCL); cA.font={name:'Calibri',bold:true,size:10}; cA.border=bdr; cA.alignment={vertical:'middle',indent:1};
             ws4.mergeCells(`B${r}:C${r}`);
             const cB=ws4.getCell(`B${r}`);
-            cB.value=sol.coordenadas||data.gps||'-'; cB.font={name:'Calibri',size:10}; cB.border=bdr; cB.alignment={vertical:'middle',indent:1};
+            cB.value=coordClean||'-'; cB.font={name:'Calibri',size:10}; cB.border=bdr; cB.alignment={vertical:'middle',indent:1};
             ws4.getRow(r).height=20; r++;
         }
         // Enlace Google Maps — destacado
@@ -1651,9 +1617,14 @@
 
             // Análisis Solar y Geolocalización
             analisisSolar: {
-                coordenadas: (latEl && lngEl && latEl.textContent !== '--')
-                    ? (latEl.textContent.trim() + ', ' + lngEl.textContent.trim())
-                    : (document.getElementById('gps-coords')?.value || ''),
+                coordenadas: (() => {
+                    if (latEl && lngEl && latEl.textContent.trim() !== '--') {
+                        const lat = (latEl.textContent.match(/([-\d.]+)/) || [])[1] || '';
+                        const lng = (lngEl.textContent.match(/([-\d.]+)/) || [])[1] || '';
+                        if (lat && lng) return lat + ', ' + lng;
+                    }
+                    return document.getElementById('gps-coords')?.value || '';
+                })(),
                 precisionGPS: accuracyEl ? accuracyEl.textContent : '',
                 altitud: altitudeEl ? altitudeEl.textContent : '',
                 // Trayectoria Solar
