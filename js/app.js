@@ -1729,65 +1729,86 @@
         if (visitas.length === 0) { showToast('No hay visitas guardadas para exportar', 'error'); return; }
 
         const wb = new ExcelJS.Workbook();
-        wb.creator = 'Ecowatt E.S.P - Visita Técnica Solar';
+        wb.creator = 'Ecowatt E.S.P · Solix SAS - Historial Visitas Técnicas Solares';
         wb.created = new Date();
 
-        const C = { azul: '1B2E5A', azulMed: '2E4A80', naranja: 'F7941D', verde: '2E7D32',
-                    amarillo: 'F9A825', rojo: 'C62828', celeste: '00A3E0',
-                    lightBlue: 'E8EDF5', lightOrange: 'FFF3E0', lightGreen: 'E8F5E9',
-                    white: 'FFFFFF', gris: 'F5F5F5' };
+        // Paleta compartida con construirWorkbookVisita
+        const AZUL='FF1B2E5A', AZULM='FF2E4A80', NARANJA='FFF7941D';
+        const VERDE='FF2E7D32', VERDECL='FFE8F5E9';
+        const CELEST='FF00A3E0', CELESTCL='FFE1F5FE';
+        const GRIS='FFF5F5F5', WHITE='FFFFFFFF';
+        const ORANGECL='FFFFF3E0', BLUECL='FFE8EDF5';
+        const vFill = { excelente:'FF4CAF50', bueno:'FF2196F3', regular:'FFFFC107', dificil:'FFFF9800', 'no-viable':'FFC62828' };
+        const vTxt  = { excelente:'🟢 EXCELENTE', bueno:'🔵 BUENO', regular:'🟡 REGULAR', dificil:'🟠 DIFÍCIL', 'no-viable':'🔴 NO VIABLE' };
 
-        const fill  = c => ({ type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + c } });
-        const fBlue = fill(C.azul);
-        const fOrange = fill(C.naranja);
-        const fGreen = fill(C.verde);
-        const fLightBlue = fill(C.lightBlue);
-        const fGray = fill(C.gris);
-        const wFont = { name: 'Calibri', color: { argb: 'FFFFFFFF' }, bold: true, size: 11 };
-        const bdr = { top:{style:'thin',color:{argb:'FFCCCCCC'}}, left:{style:'thin',color:{argb:'FFCCCCCC'}},
-                      bottom:{style:'thin',color:{argb:'FFCCCCCC'}}, right:{style:'thin',color:{argb:'FFCCCCCC'}} };
+        const fill = a => ({ type:'pattern', pattern:'solid', fgColor:{argb:a} });
+        const bdr  = { top:{style:'thin',color:{argb:'FFCCCCCC'}}, left:{style:'thin',color:{argb:'FFCCCCCC'}}, bottom:{style:'thin',color:{argb:'FFCCCCCC'}}, right:{style:'thin',color:{argb:'FFCCCCCC'}} };
 
-        const addTitleRow = (ws, cols, text, fillColor) => {
-            ws.mergeCells('A1:' + String.fromCharCode(64 + cols) + '1');
-            const c = ws.getCell('A1');
-            c.value = text; c.font = { ...wFont, size: 13 };
-            c.fill = fill(fillColor); c.alignment = { horizontal:'center', vertical:'middle' };
-            ws.getRow(1).height = 32;
-            ws.mergeCells('A2:' + String.fromCharCode(64 + cols) + '2');
-            const c2 = ws.getCell('A2');
-            c2.value = 'Generado: ' + new Date().toLocaleString('es-CO') + '  —  Total visitas: ' + visitas.length;
-            c2.font = { name:'Calibri', size:9, italic:true, color:{argb:'FFFFFFFF'} };
-            c2.fill = fill(C.azulMed); c2.alignment = { horizontal:'center' };
-            ws.getRow(2).height = 16;
-        };
+        function pageHeader(ws, title, cols, cliente, fecha) {
+            const L = String.fromCharCode(64 + cols);
+            ws.mergeCells(`A1:${L}1`);
+            const h = ws.getCell('A1');
+            h.value = '☀️  ECOWATT E.S.P   ·   SOLIX SAS   —   ' + title;
+            h.fill=fill(AZUL); h.font={name:'Calibri',bold:true,size:14,color:{argb:WHITE}};
+            h.alignment={horizontal:'center',vertical:'middle'}; ws.getRow(1).height=34;
+            ws.mergeCells(`A2:${L}2`);
+            const s = ws.getCell('A2');
+            s.value = 'Generado: ' + new Date().toLocaleString('es-CO')
+                + (cliente ? '   —   Cliente: ' + cliente : '   —   Total visitas: ' + visitas.length)
+                + (fecha   ? '   —   Fecha visita: ' + fecha : '');
+            s.fill=fill(AZULM); s.font={name:'Calibri',size:9,italic:true,color:{argb:WHITE}};
+            s.alignment={horizontal:'center'}; ws.getRow(2).height=15;
+            ws.getRow(3).height=8;
+        }
 
-        const addHeaderRow = (ws, rowN, headers, fillColor) => {
-            const row = ws.getRow(rowN);
-            headers.forEach((h, i) => {
-                const cell = row.getCell(i + 1);
-                cell.value = h; cell.font = wFont; cell.fill = fill(fillColor);
-                cell.alignment = { horizontal:'center', vertical:'middle', wrapText:true };
-                cell.border = bdr;
-            });
-            row.height = 24;
-        };
+        function secH(ws, row, text, fillColor, cols) {
+            const L = String.fromCharCode(64 + (cols||3));
+            ws.mergeCells(`A${row}:${L}${row}`);
+            const c = ws.getCell(`A${row}`);
+            c.value=text; c.fill=fill(fillColor);
+            c.font={name:'Calibri',bold:true,size:10,color:{argb:WHITE}};
+            c.alignment={horizontal:'left',vertical:'middle',indent:1};
+            ws.getRow(row).height=22;
+        }
 
-        const styleDataRow = (row, even) => {
-            row.eachCell({ includeEmpty:true }, cell => {
-                cell.border = bdr;
-                cell.font = { name:'Calibri', size:10 };
-                if (even) cell.fill = fLightBlue;
-                cell.alignment = { vertical:'middle', wrapText:true };
-            });
-            row.height = 18;
-        };
+        function addLV(ws, row, label, value, lfill, cols) {
+            cols=cols||3;
+            const c1=ws.getCell(`A${row}`);
+            c1.value=label; c1.fill=fill(lfill||GRIS);
+            c1.font={name:'Calibri',bold:true,size:10}; c1.border=bdr;
+            c1.alignment={vertical:'middle',indent:1};
+            if (cols>2) ws.mergeCells(`B${row}:${String.fromCharCode(64+cols)}${row}`);
+            const c2=ws.getCell(`B${row}`);
+            c2.value=(value!==undefined&&value!==null&&String(value).trim()!=='')?value:'-';
+            c2.font={name:'Calibri',size:10}; c2.border=bdr;
+            c2.alignment={vertical:'middle',wrapText:true,indent:1};
+            ws.getRow(row).height=20;
+        }
 
-        // ========== HOJA 1: RESUMEN GENERAL ==========
-        const ws1 = wb.addWorksheet('📊 Resumen General');
-        addTitleRow(ws1, 9, '☀️ ECOWATT E.S.P — HISTORIAL DE VISITAS TÉCNICAS SOLARES', C.azul);
+        function solRow(ws, row, icon, label, value, extra) {
+            const c1=ws.getCell(`A${row}`);
+            c1.value=icon+'  '+label; c1.fill=fill(ORANGECL);
+            c1.font={name:'Calibri',bold:true,size:10}; c1.border=bdr;
+            c1.alignment={vertical:'middle',indent:1};
+            const c2=ws.getCell(`B${row}`);
+            c2.value=value||'-'; c2.font={name:'Calibri',bold:true,size:11,color:{argb:value?AZUL:'FF9E9E9E'}};
+            c2.border=bdr; c2.alignment={horizontal:'center',vertical:'middle'};
+            const c3=ws.getCell(`C${row}`);
+            c3.value=extra||''; c3.font={name:'Calibri',size:9,italic:true};
+            c3.border=bdr; c3.alignment={vertical:'middle'};
+            ws.getRow(row).height=22;
+        }
 
-        // Stats block
-        const viabs = visitas.reduce((a, v) => { a[v.viabilidad||'?'] = (a[v.viabilidad||'?']||0)+1; return a; }, {});
+        const blank=(ws,row)=>{ ws.getRow(row).height=6; };
+
+        // ══════════════════════════════════════════════════════════
+        // HOJA 1 — RESUMEN GENERAL (tabla con todas las visitas)
+        // ══════════════════════════════════════════════════════════
+        const wsRes = wb.addWorksheet('📊 Resumen General');
+        pageHeader(wsRes, 'HISTORIAL DE VISITAS TÉCNICAS SOLARES', 9);
+
+        const viabs = visitas.reduce((a,v)=>{ a[v.viabilidad||'?']=(a[v.viabilidad||'?']||0)+1; return a; },{});
+        let r = 4;
         const statsData = [
             ['Total de visitas', visitas.length, 'Proyectos excelentes', viabs['excelente']||0],
             ['Proyectos buenos', viabs['bueno']||0, 'Proyectos regulares', viabs['regular']||0],
@@ -1796,157 +1817,196 @@
             ['Clientes industriales', visitas.filter(v=>v.tipoCliente==='industrial').length,
              'No viables', viabs['no-viable']||0],
         ];
-        ws1.getRow(3).height = 8;
-        let r = 4;
         statsData.forEach(([l1,v1,l2,v2]) => {
-            const row = ws1.getRow(r++);
+            const row = wsRes.getRow(r++);
             [l1,v1,l2,v2,'','','','',''].forEach((val,i) => {
                 const cell = row.getCell(i+1);
-                cell.value = val; cell.border = bdr;
-                if (i===0||i===2) { cell.fill=fLightBlue; cell.font={bold:true,size:10}; }
-                else if (i===1||i===3) { cell.font={bold:true,size:11,color:{argb:'FF'+C.azul}}; }
+                cell.value=val; cell.border=bdr;
+                if (i===0||i===2) { cell.fill=fill(BLUECL); cell.font={bold:true,size:10}; }
+                else if (i===1||i===3) { cell.font={bold:true,size:11,color:{argb:AZUL}}; }
             });
-            row.height = 20;
+            row.height=20;
         });
+        wsRes.getRow(r++).height=8;
 
-        ws1.getRow(r++).height = 8;
-        addHeaderRow(ws1, r++, ['#','Fecha','Hora','Cliente','Tipo','Asesor','Viabilidad','Último Consumo (kWh)','Motivo'], C.naranja);
+        const sumHdrs=['#','Fecha','Hora','Cliente','Tipo','Asesor','Viabilidad','Consumo (kWh)','Motivo'];
+        const sumHdrRow=wsRes.getRow(r++);
+        sumHdrs.forEach((h,i)=>{
+            const c=sumHdrRow.getCell(i+1);
+            c.value=h; c.font={name:'Calibri',bold:true,size:10,color:{argb:WHITE}};
+            c.fill=fill(NARANJA); c.border=bdr; c.alignment={horizontal:'center',vertical:'middle'};
+        });
+        sumHdrRow.height=24;
 
-        const vColors = { excelente:C.verde, bueno:'1565C0', regular:C.amarillo, dificil:'E65100', 'no-viable':C.rojo };
-        visitas.forEach((v, idx) => {
-            const row = ws1.addRow([
+        const vColors={excelente:'FF4CAF50',bueno:'FF1565C0',regular:'FFFFC107',dificil:'FFFF9800','no-viable':'FFC62828'};
+        visitas.forEach((v,idx)=>{
+            const row=wsRes.addRow([
                 idx+1, v.fecha, v.hora, v.cliente,
                 v.tipoCliente||'-', v.responsableVisita||'-',
-                v.viabilidad||'-',
-                v.ultimoConsumoMes || v.consumoBimestral || '-',
-                v.motivo||'-'
+                v.viabilidad||'-', v.ultimoConsumoMes||v.consumoBimestral||'-', v.motivo||'-'
             ]);
-            styleDataRow(row, idx%2===1);
-            if (v.viabilidad && vColors[v.viabilidad]) {
-                row.getCell(7).font = { bold:true, color:{argb:'FF'+vColors[v.viabilidad]}, size:10 };
-                if (v.viabilidad==='regular') row.getCell(7).font = { bold:true, color:{argb:'FF000000'}, size:10 };
+            row.eachCell({includeEmpty:true},(cell)=>{
+                cell.border=bdr; cell.font={name:'Calibri',size:10};
+                if (idx%2===1) cell.fill=fill(BLUECL);
+                cell.alignment={vertical:'middle',wrapText:true};
+            });
+            row.height=18;
+            if (v.viabilidad&&vColors[v.viabilidad]) {
+                const vc=row.getCell(7);
+                vc.font={bold:true,color:{argb:v.viabilidad==='regular'?'FF000000':WHITE},size:10};
+                vc.fill=fill(vColors[v.viabilidad]);
             }
         });
-        ws1.columns = [{w:4},{w:11},{w:7},{w:22},{w:14},{w:18},{w:14},{w:14},{w:28}].map(o=>({width:o.w}));
+        wsRes.columns=[4,11,7,22,14,18,14,14,28].map(w=>({width:w}));
 
-        // ========== HOJA 2: DATOS COMPLETOS DE CLIENTES ==========
-        const ws2 = wb.addWorksheet('👤 Datos Clientes');
-        addTitleRow(ws2, 14, '👤 DATOS COMPLETOS DE CLIENTES Y SITIOS', C.azul);
-        ws2.getRow(3).height = 8;
-        addHeaderRow(ws2, 4, [
-            'Fecha','Cliente','Email','Teléfono','Tipo Cliente','Dirección','GPS',
-            'Asesor','Proveedor Energía','No. Servicio','Tarifa CFE','kW Contratados',
-            'Req. Baterías','Num Baterías','Último Consumo (kWh)','Consumo 6 Meses (kWh)','Motivo/Interés'
-        ], C.azul);
-        visitas.forEach((v,idx) => {
-            const row = ws2.addRow([
-                v.fecha, v.cliente, v.email, v.telefono,
-                v.tipoCliente||'-', v.direccion, v.gps,
-                v.responsableVisita||'-', v.proveedorEnergia||'-', v.numeroServicio||'-',
-                v.tarifaCFE||'-', v.kilovatiosContratados||'-',
-                v.requiereBaterias==='si'?'Sí':v.requiereBaterias==='no'?'No':'-',
-                v.numBaterias||'-',
-                v.ultimoConsumoMes||v.consumoBimestral||'-',
-                v.consumo6Meses||v.pagoBimestral||'-',
-                v.motivo||'-'
-            ]);
-            styleDataRow(row, idx%2===1);
-        });
-        ws2.columns = [11,22,22,14,14,24,20,18,18,16,10,10,10,10,14,14,28].map(w=>({width:w}));
+        // ══════════════════════════════════════════════════════════
+        // HOJAS INDIVIDUALES — una hoja card-style por visita
+        // ══════════════════════════════════════════════════════════
+        visitas.forEach((v, idx) => {
+            const shortName = (v.cliente||'Visita').replace(/[^\w\sáéíóúñÁÉÍÓÚÑ]/g,'').trim().substring(0,18);
+            const ws = wb.addWorksheet((idx+1) + ' — ' + shortName);
+            let r = 4;
 
-        // ========== HOJA 3: EVALUACIÓN TÉCNICA ==========
-        const ws3 = wb.addWorksheet('✅ Evaluación Técnica');
-        addTitleRow(ws3, 19, '✅ EVALUACIÓN TÉCNICA DEL SITIO', C.verde);
-        ws3.getRow(3).height = 8;
-        const checkNames = ['techo-estado','carga-techo','impermeabilizacion','orientacion-sur',
-            'sombras','espacio','centro-carga','medidor','tierra','protecciones','ruta-cable',
-            'contrato-proveedor','acceso-medidor','acceso-techo','acceso-vehicular','andamio'];
-        const checkLabels2 = ['Estado techo','Capacidad carga','Impermeabilización','Orientación sur',
-            'Libre sombras','Espacio disponible','Centro carga/tablero','Medidor bidireccional',
-            'Tierra física','Protecciones','Ruta cableado','Contrato proveedor',
-            'Acceso medidor','Acceso techo','Acceso vehicular','Andamio'];
-        addHeaderRow(ws3, 4, ['Fecha','Cliente',...checkLabels2,'Tipo Obstáculos','Observaciones','Tipo Techo','Dist.Tablero-Paneles(m)'], C.verde);
-        const stTxt = { bien:'✅ BIEN', regular:'⚠️ REGULAR', mal:'❌ MAL', na:'➖ N/A', si:'Sí', no:'No' };
-        visitas.forEach((v,idx) => {
-            const checks = checkNames.map(k => stTxt[v.checklist?.[k]] || '-');
-            const row = ws3.addRow([v.fecha, v.cliente, ...checks,
-                v.tipoObstaculos||'-', v.observacionesChecklist||'-',
-                v.tipoTecho||'-', v.distanciaTableroPaneles||'-']);
-            styleDataRow(row, idx%2===1);
-        });
-        ws3.columns = [11,22,...checkNames.map(()=>({width:10})).map(o=>o.width),16,28,14,14].map(w=>({width:w}));
+            pageHeader(ws, 'REPORTE DE VISITA TÉCNICA SOLAR', 3, v.cliente, v.fecha);
 
-        // ========== HOJA 4: MEDICIONES ==========
-        const ws4 = wb.addWorksheet('📏 Mediciones');
-        addTitleRow(ws4, 14, '📏 MEDICIONES Y DATOS TÉCNICOS', C.celeste);
-        ws4.getRow(3).height = 8;
-        addHeaderRow(ws4, 4, [
-            'Fecha','Cliente','Inclinación Techo (°)','Azimut (°)','Altura Techo (m)',
-            'HSP','Irradiancia (kWh/m²/día)','Voltaje Red (V)','Interruptor (A)',
-            'Calibre Acometida','Transformador (kVA)','GPS','Equipo Medición',
-            'Área 1 - Descripción','Área 1 - Largo (m)','Área 1 - Ancho (m)','Área 1 - Útil (m²)'
-        ], C.celeste);
-        visitas.forEach((v,idx) => {
-            const a1 = v.areas?.[0] || {};
-            const row = ws4.addRow([
-                v.fecha, v.cliente,
-                v.mediciones?.inclinacionTecho||'-', v.mediciones?.azimut||'-',
-                v.mediciones?.alturaTecho||'-', v.mediciones?.horasSolarPico||'-',
-                v.mediciones?.irradiancia||'-', v.mediciones?.voltajeRed||'-',
-                v.mediciones?.capacidadInterruptor||'-', v.mediciones?.calibreAcometida||'-',
-                v.transformadorPotencia||'-', v.gps||'-', v.equipoMedicion||'-',
-                a1.descripcion||'-', a1.largo||'-', a1.ancho||'-', a1.areaUtil||'-'
-            ]);
-            styleDataRow(row, idx%2===1);
-        });
-        ws4.columns = [11,22,12,10,10,8,14,10,10,14,12,20,22,20,10,10,10].map(w=>({width:w}));
+            secH(ws,r++,'🗓️  INFORMACIÓN DE LA VISITA',AZUL,3);
+            addLV(ws,r++,'Fecha de Visita',v.fecha,BLUECL,3);
+            addLV(ws,r++,'Hora de Registro',v.hora,BLUECL,3);
+            addLV(ws,r++,'Asesor Responsable',v.responsableVisita,BLUECL,3);
+            addLV(ws,r++,'Motivo / Interés',v.motivo,BLUECL,3);
+            blank(ws,r++);
 
-        // ========== HOJA 5: ANÁLISIS SOLAR ==========
-        const ws5 = wb.addWorksheet('☀️ Análisis Solar');
-        addTitleRow(ws5, 10, '☀️ ANÁLISIS SOLAR Y TRAYECTORIA', C.naranja);
-        ws5.getRow(3).height = 8;
-        addHeaderRow(ws5, 4, [
-            'Fecha','Cliente','Amanecer','Az.Amanecer','Cénit Solar','Elevación Cénit',
-            'Atardecer','Az.Atardecer','Horas de Luz','Orientación Óptima','Inclinación Óptima'
-        ], C.naranja);
-        visitas.forEach((v,idx) => {
-            const s = v.analisisSolar || {};
-            const row = ws5.addRow([
-                v.fecha, v.cliente,
-                s.amanecer||'-', s.amanecerAzimut||'-',
-                s.cenitSolar||'-', s.cenitElevacion||'-',
-                s.atardecer||'-', s.atardecerAzimut||'-',
-                s.horasLuz||'-', s.orientacionOptima||'-', s.inclinacionOptima||'-'
-            ]);
-            styleDataRow(row, idx%2===1);
-        });
-        ws5.columns = [11,22,10,12,10,14,10,12,10,20,14].map(w=>({width:w}));
+            secH(ws,r++,'👤  DATOS DEL CLIENTE',AZULM,3);
+            addLV(ws,r++,'Nombre / Empresa',v.cliente,CELESTCL,3);
+            addLV(ws,r++,'Tipo de Cliente',v.tipoCliente,CELESTCL,3);
+            addLV(ws,r++,'Email',v.email,CELESTCL,3);
+            addLV(ws,r++,'Teléfono',v.telefono,CELESTCL,3);
+            addLV(ws,r++,'Dirección / Sitio',v.direccion,CELESTCL,3);
+            blank(ws,r++);
 
-        // ========== HOJA 6: CONCLUSIONES ==========
-        const ws6 = wb.addWorksheet('📝 Conclusiones');
-        addTitleRow(ws6, 6, '📝 CONCLUSIONES Y RECOMENDACIONES', C.azul);
-        ws6.getRow(3).height = 8;
-        addHeaderRow(ws6, 4, ['Fecha','Cliente','Asesor','Viabilidad','Observaciones Generales','Recomendaciones'], C.azul);
-        visitas.forEach((v,idx) => {
-            const row = ws6.addRow([
-                v.fecha, v.cliente, v.responsableVisita||'-',
-                v.viabilidad||'-',
-                v.observacionesGenerales||'-', v.recomendaciones||'-'
-            ]);
-            styleDataRow(row, idx%2===1);
-            if (v.viabilidad && vColors[v.viabilidad]) {
-                const vCell = row.getCell(4);
-                vCell.font = { bold:true, color:{argb:'FF'+(v.viabilidad==='regular'?'000000':vColors[v.viabilidad])}, size:10 };
+            secH(ws,r++,'⚡  CONSUMO ENERGÉTICO',CELEST,3);
+            addLV(ws,r++,'Último Consumo (kWh/mes)',v.ultimoConsumoMes||v.consumoBimestral,CELESTCL,3);
+            addLV(ws,r++,'Consumo 6 Meses (kWh)',v.consumo6Meses||v.pagoBimestral,CELESTCL,3);
+            addLV(ws,r++,'Proveedor de Energía',v.proveedorEnergia,CELESTCL,3);
+            addLV(ws,r++,'Número de Servicio',v.numeroServicio,CELESTCL,3);
+            addLV(ws,r++,'Tarifa CFE',v.tarifaCFE,CELESTCL,3);
+            addLV(ws,r++,'kW Contratados',v.kilovatiosContratados,CELESTCL,3);
+            addLV(ws,r++,'Requiere Baterías',v.requiereBaterias==='si'?'Sí':v.requiereBaterias==='no'?'No':'-',CELESTCL,3);
+            if (v.requiereBaterias==='si') addLV(ws,r++,'Cantidad de Baterías',v.numBaterias,CELESTCL,3);
+            blank(ws,r++);
+
+            // GPS + Google Maps
+            const coordStr = v.analisisSolar?.coordenadas || v.gps || '';
+            const coordNums = coordStr.match(/-?\d+\.\d+/g) || [];
+            const coordClean = coordNums.length>=2 ? coordNums[0]+', '+coordNums[1] : coordStr;
+            const mapsUrl = coordNums.length>=2
+                ? 'https://www.google.com/maps/search/?api=1&query='+coordNums[0]+','+coordNums[1]
+                : null;
+
+            secH(ws,r++,'📍  GEOLOCALIZACIÓN DEL SITIO',AZUL,3);
+            {
+                const cA=ws.getCell(`A${r}`);
+                cA.value='Coordenadas GPS'; cA.fill=fill(CELESTCL);
+                cA.font={name:'Calibri',bold:true,size:10}; cA.border=bdr; cA.alignment={vertical:'middle',indent:1};
+                ws.mergeCells(`B${r}:C${r}`);
+                const cB=ws.getCell(`B${r}`);
+                cB.value=coordClean||'-'; cB.font={name:'Calibri',size:10}; cB.border=bdr; cB.alignment={vertical:'middle',indent:1};
+                ws.getRow(r).height=20; r++;
             }
+            if (mapsUrl) {
+                ws.mergeCells(`A${r}:C${r}`);
+                const mCell=ws.getCell(`A${r}`);
+                mCell.value={text:'📍  Abrir ubicación del sitio en Google Maps  ▶',hyperlink:mapsUrl};
+                mCell.fill=fill('FF1565C0');
+                mCell.font={name:'Calibri',bold:true,size:11,color:{argb:WHITE},underline:true};
+                mCell.alignment={horizontal:'center',vertical:'middle'};
+                mCell.border={top:{style:'medium',color:{argb:'FF0D47A1'}},left:{style:'medium',color:{argb:'FF0D47A1'}},bottom:{style:'medium',color:{argb:'FF0D47A1'}},right:{style:'medium',color:{argb:'FF0D47A1'}}};
+                ws.getRow(r).height=28; r++;
+            }
+            const sol=v.analisisSolar||{};
+            solRow(ws,r++,'🎯','Precisión GPS',sol.precisionGPS,'');
+            solRow(ws,r++,'🏔️','Altitud sobre nivel del mar',sol.altitud,'');
+            blank(ws,r++);
+
+            // Trayectoria solar
+            secH(ws,r++,'☀️  TRAYECTORIA SOLAR DEL DÍA',NARANJA,3);
+            ['Momento del Día','Hora','Azimut / Elevación'].forEach((h,i)=>{
+                const c=ws.getRow(r).getCell(i+1);
+                c.value=h; c.fill=fill(NARANJA); c.font={name:'Calibri',bold:true,size:10,color:{argb:WHITE}};
+                c.border=bdr; c.alignment={horizontal:'center',vertical:'middle'};
+            });
+            ws.getRow(r).height=22; r++;
+            solRow(ws,r++,'🌅','Amanecer',sol.amanecer,sol.amanecerAzimut||'');
+            solRow(ws,r++,'☀️','Cénit Solar (mediodía solar)',sol.cenitSolar,sol.cenitElevacion?'Elevación: '+sol.cenitElevacion:'');
+            solRow(ws,r++,'🌇','Atardecer',sol.atardecer,sol.atardecerAzimut||'');
+            solRow(ws,r++,'🕐','Horas de Luz Solar',sol.horasLuz,'horas/día');
+            blank(ws,r++);
+
+            secH(ws,r++,'🔧  CONDICIONES ÓPTIMAS PARA INSTALACIÓN DE PANELES',VERDE,3);
+            solRow(ws,r++,'🧭','Orientación Óptima para los Paneles',sol.orientacionOptima,'');
+            solRow(ws,r++,'📐','Inclinación Óptima de los Paneles',sol.inclinacionOptima,'');
+            solRow(ws,r++,'🌡️','Posición Solar al momento de la visita',sol.posicionSolarActual,'');
+            blank(ws,r++);
+
+            // Mediciones
+            const med=v.mediciones||{};
+            secH(ws,r++,'📏  MEDICIONES DEL SITIO',CELEST,3);
+            addLV(ws,r++,'Inclinación del Techo (°)',med.inclinacionTecho,CELESTCL,3);
+            addLV(ws,r++,'Azimut / Orientación (°)  —  180° = Sur',med.azimut,CELESTCL,3);
+            addLV(ws,r++,'Altura del Techo (m)',med.alturaTecho,CELESTCL,3);
+            addLV(ws,r++,'Horas Solar Pico (HSP)',(med.horasSolarPico||'-')+' HSP/día',CELESTCL,3);
+            addLV(ws,r++,'Irradiancia Promedio',(med.irradiancia||'-')+' kWh/m²/día',CELESTCL,3);
+            addLV(ws,r++,'Voltaje de Red (V)',med.voltajeRed,CELESTCL,3);
+            addLV(ws,r++,'Interruptor Principal (A)',med.capacidadInterruptor,CELESTCL,3);
+            addLV(ws,r++,'Calibre de Acometida',med.calibreAcometida,CELESTCL,3);
+            addLV(ws,r++,'Distancia Tablero → Paneles (m)',v.distanciaTableroPaneles,CELESTCL,3);
+            addLV(ws,r++,'Potencia del Transformador (kVA)',v.transformadorPotencia,CELESTCL,3);
+            if (v.areas&&v.areas.length>0) {
+                blank(ws,r++);
+                secH(ws,r++,'📐  ÁREAS DISPONIBLES',AZULM,3);
+                v.areas.forEach((a,ai)=>{
+                    addLV(ws,r++,'Área '+(ai+1)+': '+(a.descripcion||'-'),
+                        (a.largo&&a.ancho?a.largo+' × '+a.ancho+' m   —   Útil: '+(a.areaUtil||'-')+' m²':'-'),
+                        BLUECL,3);
+                });
+            }
+            blank(ws,r++);
+
+            // Conclusiones
+            secH(ws,r++,'📝  CONCLUSIONES',AZUL,3);
+            ws.getCell(`A${r}`).value='Observaciones generales:';
+            ws.getCell(`A${r}`).fill=fill(BLUECL); ws.getCell(`A${r}`).font={name:'Calibri',bold:true,size:10}; ws.getCell(`A${r}`).border=bdr;
+            ws.getRow(r).height=20; r++;
+            ws.mergeCells(`A${r}:C${r}`);
+            ws.getCell(`A${r}`).value=v.observacionesGenerales||'-';
+            ws.getCell(`A${r}`).font={name:'Calibri',size:10}; ws.getCell(`A${r}`).border=bdr;
+            ws.getCell(`A${r}`).alignment={wrapText:true,vertical:'top'}; ws.getRow(r).height=60; r+=2;
+
+            ws.getCell(`A${r}`).value='Recomendaciones:';
+            ws.getCell(`A${r}`).fill=fill(BLUECL); ws.getCell(`A${r}`).font={name:'Calibri',bold:true,size:10}; ws.getCell(`A${r}`).border=bdr;
+            ws.getRow(r).height=20; r++;
+            ws.mergeCells(`A${r}:C${r}`);
+            ws.getCell(`A${r}`).value=v.recomendaciones||'-';
+            ws.getCell(`A${r}`).font={name:'Calibri',size:10}; ws.getCell(`A${r}`).border=bdr;
+            ws.getCell(`A${r}`).alignment={wrapText:true,vertical:'top'}; ws.getRow(r).height=60; r+=2;
+
+            secH(ws,r++,'🏆  VIABILIDAD DEL PROYECTO',VERDE,3);
+            ws.mergeCells(`A${r}:C${r}`);
+            const vCell=ws.getCell(`A${r}`);
+            vCell.value=vTxt[v.viabilidad]||(v.viabilidad||'Sin evaluar');
+            vCell.fill=fill(vFill[v.viabilidad]||'FF9E9E9E');
+            vCell.font={name:'Calibri',bold:true,size:18,color:{argb:v.viabilidad==='regular'?'FF000000':WHITE}};
+            vCell.alignment={horizontal:'center',vertical:'middle'}; vCell.border=bdr;
+            ws.getRow(r).height=44;
+
+            ws.columns=[{width:40},{width:22},{width:28}];
         });
-        ws6.columns = [11,22,18,14,42,42].map(w=>({width:w}));
 
         const fileName = 'Ecowatt_Historial_' + new Date().toISOString().split('T')[0] + '.xlsx';
         const buffer = await wb.xlsx.writeBuffer();
         saveAs(new Blob([buffer]), fileName);
-        showToast('📊 Excel completo descargado: ' + visitas.length + ' visitas — 6 hojas', 'success');
+        showToast('📊 Historial descargado: ' + visitas.length + ' visitas — reporte completo por visita', 'success');
 
-        // Subir a OneDrive si está configurado
         if (window.subirAOneDrive && window.estadoOneDrive && window.estadoOneDrive().configurado) {
             await window.subirAOneDrive(buffer, fileName);
         }
