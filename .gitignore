@@ -1,0 +1,31 @@
+# ============================================
+# SECRETOS - NUNCA SUBIR A GITHUB
+# ============================================
+.secrets/
+secretos/
+secrets/
+*-firebase-adminsdk-*.json
+firebase-admin*.json
+serviceAccountKey.json
+.env
+.env.*
+!.env.example
+
+# ============================================
+# Dependencias
+# ============================================
+node_modules/
+
+# ============================================
+# Logs y temporales
+# ============================================
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# ============================================
+# Editor
+# ============================================
+.vscode/
+.idea/
