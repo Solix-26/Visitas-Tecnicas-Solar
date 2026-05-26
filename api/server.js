@@ -18,11 +18,22 @@ const app = express();
 const PORT = process.env.PORT || 3002;
 
 // ── Firebase Admin SDK ───────────────────────────────────────
-// Inicializar con las credenciales del proyecto solix-visitas
-// En producción usar GOOGLE_APPLICATION_CREDENTIALS o variable de entorno
-admin.initializeApp({
-    projectId: 'solix-visitas'
-});
+// En producción (Render) leemos el service account desde la variable
+// de entorno GOOGLE_APPLICATION_CREDENTIALS_JSON (contenido del JSON).
+// En local, si existe GOOGLE_APPLICATION_CREDENTIALS (ruta al archivo),
+// firebase-admin lo toma automáticamente.
+const initOptions = { projectId: 'solix-visitas' };
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+    try {
+        const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+        initOptions.credential = admin.credential.cert(serviceAccount);
+        console.log('Firebase Admin: usando credenciales de GOOGLE_APPLICATION_CREDENTIALS_JSON');
+    } catch (e) {
+        console.error('ERROR: GOOGLE_APPLICATION_CREDENTIALS_JSON no es un JSON válido:', e.message);
+        process.exit(1);
+    }
+}
+admin.initializeApp(initOptions);
 const db = admin.firestore();
 
 // ── Middleware ───────────────────────────────────────────────
