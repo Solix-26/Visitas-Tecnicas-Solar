@@ -1,5 +1,5 @@
 // Service Worker para Visita Técnica Solar - Ecowatt E.S.P
-const CACHE_NAME = 'visita-solar-v19';
+const CACHE_NAME = 'visita-solar-v20';
 const urlsToCache = [
     '/',
     '/index.html',

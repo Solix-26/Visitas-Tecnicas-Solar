@@ -11,17 +11,8 @@
     <!-- Inter font for a modern SaaS-style look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
-    <!-- Theme toggle: aplicar preferencia ANTES de renderizar para evitar flash -->
-    <script>
-      (function() {
-        try {
-          var theme = localStorage.getItem('visita-solar-theme') || 'dark';
-          if (theme === 'light') document.documentElement.classList.add('light-mode');
-        } catch(e) {}
-      })();
-    </script>
     <!-- SheetJS para exportar Excel (local para funcionar offline) -->
     <script src="js/xlsx.full.min.js"></script>
     <!-- ExcelJS para crear Excel con imágenes -->
@@ -102,10 +93,7 @@
                 <img src="icons/logo-solix.png" alt="Solix SAS" class="header-logo">
             </div>
         </div>
-        <div style="display:flex; gap:0.5rem; align-items:center;">
-            <button id="btn-theme-toggle" class="btn-theme-toggle" title="Cambiar tema (dark/light)" aria-label="Cambiar tema">🌙</button>
-            <button id="btn-menu" class="btn-icon" title="Menú">☰</button>
-        </div>
+        <button id="btn-menu" class="btn-icon" title="Menú">☰</button>
     </header>
 
     <!-- ========== MENÚ LATERAL ========== -->
