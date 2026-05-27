@@ -420,6 +420,37 @@
             overlay.classList.add('active');
         });
 
+        // Toggle dark/light theme
+        const btnTheme = document.getElementById('btn-theme-toggle');
+        function isLightMode() { return document.documentElement.classList.contains('light-mode'); }
+
+        function swapEcowattLogo() {
+            // Siempre usar el logo coloreado original (con letras azules)
+            // El "badge blanco" alrededor lo da el CSS
+            const ecowattLogos = document.querySelectorAll('img[src*="logo-ecowatt"]:not([src*="solix"])');
+            ecowattLogos.forEach(img => {
+                if (!img.src.endsWith('icons/logo-ecowatt.png')) img.src = 'icons/logo-ecowatt.png';
+            });
+        }
+
+        function updateThemeIcon() {
+            if (btnTheme) {
+                btnTheme.textContent = isLightMode() ? '☀️' : '🌙';
+                btnTheme.title = isLightMode() ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro';
+            }
+        }
+        updateThemeIcon();
+        swapEcowattLogo();
+        if (btnTheme) {
+            btnTheme.addEventListener('click', () => {
+                document.documentElement.classList.toggle('light-mode');
+                const theme = isLightMode() ? 'light' : 'dark';
+                try { localStorage.setItem('visita-solar-theme', theme); } catch(e) {}
+                updateThemeIcon();
+                swapEcowattLogo();
+            });
+        }
+
         function closeSidebar() {
             sidebar.classList.remove('open');
             overlay.classList.remove('active');
@@ -2210,8 +2241,12 @@
         const toast = document.getElementById('toast');
         toast.textContent = message;
         toast.className = 'toast show' + (type ? ' ' + type : '');
-        setTimeout(() => { toast.className = 'toast'; }, 3000);
+        // Más tiempo para mensajes de éxito de OneDrive (4s en lugar de 3s)
+        const duration = (type === 'success' && message.includes('OneDrive')) ? 4500 : 3000;
+        setTimeout(() => { toast.className = 'toast'; }, duration);
     }
+    // Exponer showToast globalmente para que onedrive.js pueda usarlo
+    window.showToast = showToast;
 
     // ========== SERVICE WORKER ==========
     function registerServiceWorker() {

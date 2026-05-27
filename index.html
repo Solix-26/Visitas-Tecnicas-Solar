@@ -8,7 +8,20 @@
     <title>Ecowatt E.S.P - Visita Técnica</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <!-- Inter font for a modern SaaS-style look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <!-- Theme toggle: aplicar preferencia ANTES de renderizar para evitar flash -->
+    <script>
+      (function() {
+        try {
+          var theme = localStorage.getItem('visita-solar-theme') || 'dark';
+          if (theme === 'light') document.documentElement.classList.add('light-mode');
+        } catch(e) {}
+      })();
+    </script>
     <!-- SheetJS para exportar Excel (local para funcionar offline) -->
     <script src="js/xlsx.full.min.js"></script>
     <!-- ExcelJS para crear Excel con imágenes -->
@@ -89,7 +102,10 @@
                 <img src="icons/logo-solix.png" alt="Solix SAS" class="header-logo">
             </div>
         </div>
-        <button id="btn-menu" class="btn-icon" title="Menú">☰</button>
+        <div style="display:flex; gap:0.5rem; align-items:center;">
+            <button id="btn-theme-toggle" class="btn-theme-toggle" title="Cambiar tema (dark/light)" aria-label="Cambiar tema">🌙</button>
+            <button id="btn-menu" class="btn-icon" title="Menú">☰</button>
+        </div>
     </header>
 
     <!-- ========== MENÚ LATERAL ========== -->
@@ -942,7 +958,7 @@
                 <p class="hint">Cualquier técnico podrá subir reportes a OneDrive con un botón. <strong>Sin login por usuario.</strong> El admin configura esto una vez — gratis con Microsoft 365, sin necesidad de Power Automate Premium.</p>
                 <p id="onedrive-status" class="onedrive-status-text">Verificando...</p>
 
-                <details class="onedrive-setup-guide" open>
+                <details class="onedrive-setup-guide">
                     <summary>📋 Configuración — Azure AD App (15 minutos, una sola vez, incluido en M365)</summary>
                     <ol class="setup-steps">
                         <li>Ve a <strong>portal.azure.com</strong> → <strong>Azure Active Directory</strong> → <strong>Registros de aplicaciones</strong> → <strong>Nuevo registro</strong></li>
@@ -967,13 +983,19 @@
                 </div>
                 <div class="form-group">
                     <label for="config-ms-client-secret">Secreto de cliente (Client Secret)</label>
-                    <input type="password" id="config-ms-client-secret" placeholder="El valor del secreto (no el ID)">
+                    <input type="password" id="config-ms-client-secret" placeholder="El valor del secreto">
                 </div>
                 <div class="form-group">
                     <label for="config-ms-drive-user">Correo OneDrive destino</label>
-                    <input type="email" id="config-ms-drive-user" placeholder="admin@tuempresa.com">
-                    <small>Archivos se guardarán en el OneDrive de este usuario, carpeta "Visitas Técnicas Solar".</small>
+                    <input type="email" id="config-ms-drive-user" placeholder="sistemas@solix.com.co">
+                    <small>Todos los archivos se subirán al OneDrive de este correo, carpeta <strong>"Visitas Técnicas Solar"</strong>.</small>
                 </div>
+                <div class="form-group">
+                    <label for="config-proxy-url">URL del servidor proxy</label>
+                    <input type="url" id="config-proxy-url" placeholder="https://visita-tecnica-proxy.onrender.com">
+                    <small>Dirección del servidor intermediario que maneja la conexión con Microsoft.</small>
+                </div>
+                <div id="onedrive-status" style="margin:0.5rem 0;font-size:0.9em;"></div>
                 <button type="button" id="btn-guardar-onedrive" class="btn btn-onedrive">💾 Guardar configuración OneDrive</button>
             </div>
 
