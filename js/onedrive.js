@@ -9,7 +9,7 @@
 
     // ── URL del proxy backend ────────────────────────────────────
     // Cambiar esta URL cuando se despliegue el proxy en producción
-    var PROXY_URL = localStorage.getItem('onedrive-proxy-url') || 'https://visita-solar-proxy.onrender.com';
+    var PROXY_URL = localStorage.getItem('onedrive-proxy-url') || 'https://visitas-tecnicas-solar.onrender.com';
 
     // ── Verificar si OneDrive está configurado ───────────────────
     var oneDriveConfigurado = false;
