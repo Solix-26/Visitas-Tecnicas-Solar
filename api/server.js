@@ -39,7 +39,6 @@ const db = admin.firestore();
 // ── Middleware ───────────────────────────────────────────────
 app.use(cors({
     origin: [
-        'https://rafael-henao.github.io',
         'https://solix-26.github.io',
         'http://localhost:3000',
         'http://localhost:8000',
