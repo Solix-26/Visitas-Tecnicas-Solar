@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <script>
+    (function() {
+        var saved = localStorage.getItem('theme');
+        var system = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        document.documentElement.dataset.theme = saved || system;
+    })();
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#1B2E5A">
@@ -8,6 +15,9 @@
     <title>Ecowatt E.S.P - Visita Técnica</title>
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Manrope:wght@300..800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
     <!-- SheetJS para exportar Excel (local para funcionar offline) -->
     <script src="js/xlsx.full.min.js"></script>
@@ -82,6 +92,9 @@
 
     <!-- ========== HEADER ========== -->
     <header class="app-header" id="app-header" style="display:none;">
+        <button id="btn-theme-toggle" class="btn-theme-toggle" type="button" aria-label="Cambiar modo de color">
+            <span class="theme-toggle-icon" aria-hidden="true">☀️</span>
+        </button>
         <div class="header-content">
             <div class="header-logos-duo">
                 <img src="icons/logo-ecowatt.png" alt="Ecowatt E.S.P" class="header-logo">
@@ -121,6 +134,12 @@
 
         <!-- VISTA: Nueva Visita -->
         <div id="view-nueva-visita" class="view active">
+            <!-- Banner de modo edición (visible solo cuando se está editando una visita ya guardada) -->
+            <div id="edit-mode-banner" class="edit-mode-banner" hidden>
+                <span class="emb-icon">✏️</span>
+                <span class="emb-text">Editando <strong>VISITA #<span id="edit-mode-id">---</span></strong></span>
+                <button type="button" id="edit-mode-cancel" class="emb-cancel" onclick="window.appCancelarEdicion && window.appCancelarEdicion()">Cancelar edición</button>
+            </div>
             <!-- Indicador de pasos -->
             <div class="step-indicator">
                 <div class="step active" data-step="1"><span>1</span><small>Cliente</small></div>
@@ -166,7 +185,34 @@
                     </div>
                     <div class="form-group">
                         <label for="tipo-cliente">Tipo de Cliente</label>
-                        <select id="tipo-cliente">
+                        <div class="tile-grid tile-grid-cliente" role="group" aria-labelledby="tipo-cliente-label">
+                            <button type="button" class="tile-pick" data-target="tipo-cliente" data-value="residencial">
+                                <span class="tile-check" aria-hidden="true">✓</span>
+                                <span class="tile-icon">🏠</span>
+                                <span class="tile-label">Residencial</span>
+                            </button>
+                            <button type="button" class="tile-pick" data-target="tipo-cliente" data-value="comercial">
+                                <span class="tile-check" aria-hidden="true">✓</span>
+                                <span class="tile-icon">🏢</span>
+                                <span class="tile-label">Comercial</span>
+                            </button>
+                            <button type="button" class="tile-pick" data-target="tipo-cliente" data-value="industrial">
+                                <span class="tile-check" aria-hidden="true">✓</span>
+                                <span class="tile-icon">🏭</span>
+                                <span class="tile-label">Industrial</span>
+                            </button>
+                            <button type="button" class="tile-pick" data-target="tipo-cliente" data-value="turismo">
+                                <span class="tile-check" aria-hidden="true">✓</span>
+                                <span class="tile-icon">🏨</span>
+                                <span class="tile-label">Turismo</span>
+                            </button>
+                            <button type="button" class="tile-pick tile-wide" data-target="tipo-cliente" data-value="agroindustrial">
+                                <span class="tile-check" aria-hidden="true">✓</span>
+                                <span class="tile-icon">🌾</span>
+                                <span class="tile-label">Agroindustrial</span>
+                            </button>
+                        </div>
+                        <select id="tipo-cliente" class="tile-grid-hidden-select" aria-hidden="true" tabindex="-1">
                             <option value="">Seleccionar...</option>
                             <option value="residencial">🏠 Residencial</option>
                             <option value="comercial">🏢 Comercial</option>
@@ -228,8 +274,20 @@
                         <input type="hidden" id="requiere-baterias" value="">
                     </div>
                     <div class="form-group" id="num-baterias-group" style="display:none;">
-                        <label for="num-baterias">Número de baterías</label>
-                        <select id="num-baterias">
+                        <label>Número de baterías</label>
+                        <div class="battery-selector" id="battery-selector" role="group">
+                            <button type="button" class="battery-cell" data-value="1"><span class="bc-num">1</span></button>
+                            <button type="button" class="battery-cell" data-value="2"><span class="bc-num">2</span></button>
+                            <button type="button" class="battery-cell" data-value="3"><span class="bc-num">3</span></button>
+                            <button type="button" class="battery-cell" data-value="4"><span class="bc-num">4</span></button>
+                            <button type="button" class="battery-cell" data-value="5"><span class="bc-num">5</span></button>
+                            <button type="button" class="battery-cell" data-value="6"><span class="bc-num">6</span></button>
+                            <button type="button" class="battery-cell" data-value="7"><span class="bc-num">7</span></button>
+                            <button type="button" class="battery-cell" data-value="8"><span class="bc-num">8</span></button>
+                            <button type="button" class="battery-cell" data-value="9"><span class="bc-num">9</span></button>
+                            <button type="button" class="battery-cell" data-value="10"><span class="bc-num">10</span></button>
+                        </div>
+                        <select id="num-baterias" class="tile-grid-hidden-select" aria-hidden="true" tabindex="-1">
                             <option value="">Seleccionar...</option>
                             <option value="1">1</option>
                             <option value="2">2</option>
@@ -269,6 +327,68 @@
                         <textarea id="motivo-otro" rows="2" placeholder="Describe el motivo del cliente..."></textarea>
                     </div>
                 </div>
+
+                <!-- Tarjeta 5: Irradiación Solar (movida del Paso 3 para tener todo en un lugar) -->
+                <div class="checklist-category card-sky">
+                    <h3>☀️ Irradiación Solar</h3>
+                    <p class="hint">Obtén los datos automáticamente desde tu ubicación GPS</p>
+                    <div style="margin-bottom: 1rem;">
+                        <button type="button" id="btn-obtener-irradiacion" class="btn btn-primary" style="width: 100%;">
+                            ☀️ Obtener Irradiación Automática
+                        </button>
+                    </div>
+                    <div id="irradiacion-status" style="color: #4CAF50; font-size: 0.85rem; margin-bottom: 0.8rem; font-weight: 500;"></div>
+                    <div class="form-group">
+                        <label for="horas-solar-pico">Horas Solar Pico (HSP)</label>
+                        <input type="number" id="horas-solar-pico" step="0.1" placeholder="5.2">
+                        <div class="hsp-visualizer" id="hsp-viz" data-quality="">
+                            <div class="hsp-track">
+                                <div class="hsp-fill"></div>
+                                <div class="hsp-sun" aria-hidden="true"></div>
+                            </div>
+                            <div class="hsp-ticks" aria-hidden="true">
+                                <span style="--at:0%">1</span>
+                                <span style="--at:20%">2</span>
+                                <span style="--at:40%">3</span>
+                                <span style="--at:60%">4</span>
+                                <span style="--at:80%">5</span>
+                                <span style="--at:100%">6+</span>
+                            </div>
+                            <div class="hsp-meta">
+                                <span class="hsp-quality">— Sin medir</span>
+                                <span class="hsp-readout">--<small>HSP</small></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="irradiancia">Irradiancia (kWh/m²/día)</label>
+                        <input type="number" id="irradiancia" step="0.1" placeholder="5.5">
+                    </div>
+
+                    <!-- Estimación de potencial solar (calculada en vivo a partir de consumo + HSP) -->
+                    <div class="solar-potential" id="solar-potential">
+                        <div class="sp-header">
+                            <span class="sp-eyebrow">ESTIMACIÓN PRELIMINAR · CÁLCULO EN VIVO</span>
+                            <h4>☀️ Potencial Solar del Sitio</h4>
+                        </div>
+                        <div class="sp-grid">
+                            <div class="sp-stat">
+                                <span class="sp-stat-value" id="sp-kwp">--</span>
+                                <span class="sp-stat-unit">kWp sistema</span>
+                            </div>
+                            <div class="sp-stat">
+                                <span class="sp-stat-value" id="sp-paneles">--</span>
+                                <span class="sp-stat-unit">paneles 550W</span>
+                            </div>
+                            <div class="sp-stat">
+                                <span class="sp-stat-value" id="sp-produccion">--</span>
+                                <span class="sp-stat-unit">kWh/año</span>
+                            </div>
+                        </div>
+                        <p class="sp-note">Cálculo aproximado basado en consumo + HSP. Sujeto a evaluación técnica final.</p>
+                    </div>
+                </div>
+
                 <div class="form-actions">
                     <button type="button" class="btn btn-primary btn-next" data-next="2">Siguiente →</button>
                 </div>
@@ -330,12 +450,21 @@
 
                     <!-- Trayectoria Solar -->
                     <div id="solar-sun-data" class="solar-sun-section" style="display:none;">
-                        <h4>☀️ Trayectoria Solar del Día</h4>
+                        <div class="solar-sun-header">
+                            <span class="solar-sun-eyebrow"><span class="live-dot"></span>LIVE · DATOS DE GEOLOCALIZACIÓN</span>
+                            <h4>☀️ Trayectoria Solar del Día</h4>
+                        </div>
 
                         <!-- Canvas brújula solar -->
                         <div class="solar-compass-wrapper">
-                            <canvas id="solar-compass" width="300" height="300"></canvas>
-                            <p class="hint" style="text-align:center; margin-top:0.3rem;">Brújula solar con trayectoria del sol</p>
+                            <div class="solar-compass-frame">
+                                <span class="compass-cardinal compass-n">N</span>
+                                <span class="compass-cardinal compass-e">E</span>
+                                <span class="compass-cardinal compass-s">S</span>
+                                <span class="compass-cardinal compass-w">W</span>
+                                <canvas id="solar-compass" width="300" height="300"></canvas>
+                            </div>
+                            <p class="hint" style="text-align:center; margin-top:0.6rem;">Brújula solar con trayectoria del sol</p>
                         </div>
 
                         <div class="solar-sun-grid">
@@ -736,25 +865,6 @@
                         </div>
                     </div>
 
-                    <div class="medicion-card">
-                        <h4>☀️ Irradiación Solar</h4>
-                        <p class="hint">Obtén los datos automáticamente desde tu ubicación GPS</p>
-                        <div style="margin-bottom: 1rem;">
-                            <button type="button" id="btn-obtener-irradiacion" class="btn btn-primary" style="width: 100%;">
-                                ☀️ Obtener Irradiación Automática
-                            </button>
-                        </div>
-                        <div id="irradiacion-status" style="color: #4CAF50; font-size: 0.85rem; margin-bottom: 0.8rem; font-weight: 500;"></div>
-                        <div class="form-group">
-                            <label for="horas-solar-pico">Horas Solar Pico (HSP)</label>
-                            <input type="number" id="horas-solar-pico" step="0.1" placeholder="5.2">
-                        </div>
-                        <div class="form-group">
-                            <label for="irradiancia">Irradiancia (kWh/m²/día)</label>
-                            <input type="number" id="irradiancia" step="0.1" placeholder="5.5">
-                        </div>
-                    </div>
-
                     <div class="medicion-card card-accent">
                         <h4>⚡ Eléctrico Existente</h4>
                         <div class="form-group">
@@ -853,8 +963,40 @@
                 <div class="checklist-category card-sky">
                     <h3>✅ Viabilidad del Proyecto</h3>
                     <div class="form-group">
-                        <label for="viabilidad">Viabilidad del Proyecto</label>
-                        <select id="viabilidad">
+                        <label>Viabilidad del Proyecto</label>
+                        <div class="viab-gauge" id="viab-gauge" data-value="">
+                            <svg class="vg-svg" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <!-- Arc segments (180° split in 5 × 36°) -->
+                                <path class="vg-seg" data-v="no-viable" d="M 50 160 A 110 110 0 0 1 71 95" />
+                                <path class="vg-seg" data-v="dificil"   d="M 71 95  A 110 110 0 0 1 126 55" />
+                                <path class="vg-seg" data-v="regular"   d="M 126 55 A 110 110 0 0 1 194 55" />
+                                <path class="vg-seg" data-v="bueno"     d="M 194 55 A 110 110 0 0 1 249 95" />
+                                <path class="vg-seg" data-v="excelente" d="M 249 95 A 110 110 0 0 1 270 160" />
+                                <!-- Tick labels -->
+                                <text class="vg-tick" x="42"  y="185" text-anchor="start">NO VIABLE</text>
+                                <text class="vg-tick" x="278" y="185" text-anchor="end">EXCELENTE</text>
+                                <!-- Needle -->
+                                <g class="vg-needle">
+                                    <line x1="160" y1="160" x2="160" y2="62" stroke-width="3" stroke-linecap="round"/>
+                                    <circle cx="160" cy="62" r="5"/>
+                                </g>
+                                <!-- Center hub -->
+                                <circle cx="160" cy="160" r="16" class="vg-hub-outer"/>
+                                <circle cx="160" cy="160" r="9"  class="vg-hub-inner"/>
+                            </svg>
+                            <div class="vg-readout">
+                                <span class="vg-readout-eyebrow">EVALUACIÓN FINAL</span>
+                                <span class="vg-readout-value">— Sin evaluar</span>
+                            </div>
+                            <div class="vg-buttons">
+                                <button type="button" class="vg-btn" data-v="no-viable"><span class="vg-dot"></span>No Viable</button>
+                                <button type="button" class="vg-btn" data-v="dificil"><span class="vg-dot"></span>Difícil</button>
+                                <button type="button" class="vg-btn" data-v="regular"><span class="vg-dot"></span>Regular</button>
+                                <button type="button" class="vg-btn" data-v="bueno"><span class="vg-dot"></span>Bueno</button>
+                                <button type="button" class="vg-btn" data-v="excelente"><span class="vg-dot"></span>Excelente</button>
+                            </div>
+                        </div>
+                        <select id="viabilidad" class="tile-grid-hidden-select" aria-hidden="true" tabindex="-1">
                             <option value="">Seleccionar...</option>
                             <option value="excelente">🟢 Excelente - Condiciones ideales</option>
                             <option value="bueno">🔵 Bueno - Viable con mínimos ajustes</option>
@@ -937,7 +1079,47 @@
                 <button type="button" id="btn-guardar-preferencias" class="btn btn-primary">💾 Guardar Preferencias</button>
             </div>
             
-            <div class="config-section">
+            <div class="config-section card-accent">
+                <h3>📱 Información de la App</h3>
+                <p>Versión: 2.2.0 — Ecowatt E.S.P</p>
+                <p>Visitas guardadas: <span id="total-visitas">0</span></p>
+                <button type="button" id="btn-borrar-todo" class="btn btn-danger">🗑️ Borrar Todos los Datos</button>
+            </div>
+        </div>
+
+        <!-- VISTA: Admin - Gestionar Usuarios -->
+        <div id="view-admin-usuarios" class="view">
+            <h2 class="section-title">👥 Gestionar Usuarios</h2>
+
+            <!-- Formulario agregar usuario -->
+            <div class="card admin-form-card">
+                <h3>Agregar nuevo usuario</h3>
+                <div class="form-group">
+                    <label>Nombre</label>
+                    <input type="text" id="admin-nuevo-nombre" placeholder="Nombre del técnico">
+                </div>
+                <div class="form-group">
+                    <label>Correo electrónico</label>
+                    <input type="email" id="admin-nuevo-email" placeholder="correo@empresa.com">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña temporal</label>
+                    <input type="password" id="admin-nuevo-password" placeholder="Mínimo 6 caracteres">
+                </div>
+                <p id="admin-form-error" class="admin-form-error"></p>
+                <button id="btn-admin-agregar" class="btn btn-primary">➕ Agregar usuario</button>
+            </div>
+
+            <!-- Lista de usuarios -->
+            <div class="card">
+                <h3>Usuarios registrados</h3>
+                <div id="admin-users-list" class="admin-users-list">
+                    <p class="hint">Cargando usuarios...</p>
+                </div>
+            </div>
+
+            <!-- Configuración OneDrive (movida desde Configuración, solo accesible para admins) -->
+            <div class="config-section card-sky">
                 <h3>☁️ Subir a OneDrive — Microsoft 365</h3>
                 <p class="hint">Cualquier técnico podrá subir reportes a OneDrive con un botón. <strong>Sin login por usuario.</strong> El admin configura esto una vez — gratis con Microsoft 365, sin necesidad de Power Automate Premium.</p>
                 <p id="onedrive-status" class="onedrive-status-text">Verificando...</p>
@@ -979,47 +1161,7 @@
                     <input type="url" id="config-proxy-url" placeholder="https://visita-tecnica-proxy.onrender.com">
                     <small>Dirección del servidor intermediario que maneja la conexión con Microsoft.</small>
                 </div>
-                <div id="onedrive-status" style="margin:0.5rem 0;font-size:0.9em;"></div>
                 <button type="button" id="btn-guardar-onedrive" class="btn btn-onedrive">💾 Guardar configuración OneDrive</button>
-            </div>
-
-            <div class="config-section card-accent">
-                <h3>📱 Información de la App</h3>
-                <p>Versión: 2.2.0 — Ecowatt E.S.P</p>
-                <p>Visitas guardadas: <span id="total-visitas">0</span></p>
-                <button type="button" id="btn-borrar-todo" class="btn btn-danger">🗑️ Borrar Todos los Datos</button>
-            </div>
-        </div>
-
-        <!-- VISTA: Admin - Gestionar Usuarios -->
-        <div id="view-admin-usuarios" class="view">
-            <h2 class="section-title">👥 Gestionar Usuarios</h2>
-
-            <!-- Formulario agregar usuario -->
-            <div class="card admin-form-card">
-                <h3>Agregar nuevo usuario</h3>
-                <div class="form-group">
-                    <label>Nombre</label>
-                    <input type="text" id="admin-nuevo-nombre" placeholder="Nombre del técnico">
-                </div>
-                <div class="form-group">
-                    <label>Correo electrónico</label>
-                    <input type="email" id="admin-nuevo-email" placeholder="correo@empresa.com">
-                </div>
-                <div class="form-group">
-                    <label>Contraseña temporal</label>
-                    <input type="password" id="admin-nuevo-password" placeholder="Mínimo 6 caracteres">
-                </div>
-                <p id="admin-form-error" class="admin-form-error"></p>
-                <button id="btn-admin-agregar" class="btn btn-primary">➕ Agregar usuario</button>
-            </div>
-
-            <!-- Lista de usuarios -->
-            <div class="card">
-                <h3>Usuarios registrados</h3>
-                <div id="admin-users-list" class="admin-users-list">
-                    <p class="hint">Cargando usuarios...</p>
-                </div>
             </div>
         </div>
 
@@ -1027,6 +1169,453 @@
 
     <!-- Toast de notificaciones -->
     <div id="toast" class="toast"></div>
+
+    <!-- Photo Lightbox -->
+    <div id="photo-lightbox" class="photo-lightbox" hidden>
+        <button class="lightbox-btn lightbox-close" id="lightbox-close" type="button" aria-label="Cerrar">✕</button>
+        <button class="lightbox-btn lightbox-prev"  id="lightbox-prev"  type="button" aria-label="Anterior">‹</button>
+        <button class="lightbox-btn lightbox-next"  id="lightbox-next"  type="button" aria-label="Siguiente">›</button>
+        <div class="lightbox-content">
+            <img id="lightbox-img" alt="">
+        </div>
+        <div class="lightbox-meta">
+            <span id="lightbox-pos">1 / 1</span>
+        </div>
+    </div>
+
+    <!-- Visita Registrada Celebration -->
+    <div id="success-celebration" class="success-celebration" hidden>
+        <div class="sc-rays" aria-hidden="true"></div>
+        <div class="sc-content">
+            <div class="sc-check">
+                <svg viewBox="0 0 80 80" class="sc-check-svg" aria-hidden="true">
+                    <circle cx="40" cy="40" r="36" class="sc-circle" />
+                    <path d="M22 42 L36 56 L60 28" class="sc-path" />
+                </svg>
+            </div>
+            <span class="sc-eyebrow">REGISTRADO CON ÉXITO</span>
+            <h2 class="sc-id">VISITA #<span id="sc-num">000</span></h2>
+            <p class="sc-meta">
+                <span id="sc-date">--</span> · <span id="sc-time">--</span><br>
+                <span id="sc-coords">GPS: no registrado</span>
+            </p>
+            <div class="sc-actions">
+                <button type="button" id="sc-historial" class="btn btn-secondary">Ver Historial</button>
+                <button type="button" id="sc-nueva" class="btn btn-primary">Nueva Visita</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Viability gauge -->
+    <script>
+    (function() {
+        var gauge = document.getElementById('viab-gauge');
+        var sel   = document.getElementById('viabilidad');
+        if (!gauge || !sel) return;
+        var readout = gauge.querySelector('.vg-readout-value');
+        var eyebrow = gauge.querySelector('.vg-readout-eyebrow');
+        var btns    = gauge.querySelectorAll('.vg-btn');
+        var labels = {
+            'no-viable': 'NO VIABLE',
+            'dificil':   'DIFÍCIL',
+            'regular':   'REGULAR',
+            'bueno':     'BUENO',
+            'excelente': 'EXCELENTE'
+        };
+        function sync() {
+            var v = sel.value || '';
+            gauge.dataset.value = v;
+            readout.textContent = v ? labels[v] : '— Sin evaluar';
+            eyebrow.textContent = v ? 'EVALUACIÓN FINAL' : 'SELECCIONÁ NIVEL';
+            btns.forEach(function(b) { b.classList.toggle('active', b.dataset.v === v && v !== ''); });
+        }
+        btns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                sel.value = btn.dataset.v;
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+                sync();
+            });
+        });
+        setInterval(sync, 600);
+        sync();
+    })();
+    </script>
+
+    <!-- Brújula solar: live timestamp + breathing pulse -->
+    <script>
+    (function() {
+        var section = document.getElementById('solar-sun-data');
+        if (!section) return;
+        // Add live timestamp badge after compass wrapper
+        var wrap = section.querySelector('.solar-compass-wrapper');
+        if (wrap && !wrap.querySelector('.compass-live-stamp')) {
+            var stamp = document.createElement('div');
+            stamp.className = 'compass-live-stamp';
+            stamp.innerHTML = '<span class="cls-dot"></span><span class="cls-text">ACTUALIZADO <span id="compass-time">—</span></span>';
+            wrap.appendChild(stamp);
+        }
+        function updateTime() {
+            var el = document.getElementById('compass-time');
+            if (!el) return;
+            if (section.style.display === 'none' || !section.offsetParent) return;
+            var now = new Date();
+            el.textContent = now.toTimeString().slice(0,5);
+        }
+        setInterval(updateTime, 30000);
+        updateTime();
+    })();
+    </script>
+
+    <!-- Tile pickers (tipo cliente, etc.) -->
+    <script>
+    (function() {
+        var groups = {};
+        document.querySelectorAll('.tile-pick').forEach(function(tile) {
+            var target = tile.dataset.target;
+            if (!target) return;
+            (groups[target] = groups[target] || []).push(tile);
+            tile.addEventListener('click', function() {
+                var sel = document.getElementById(target);
+                if (!sel) return;
+                sel.value = tile.dataset.value;
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+                syncGroup(target);
+            });
+        });
+        function syncGroup(target) {
+            var sel = document.getElementById(target);
+            if (!sel) return;
+            (groups[target] || []).forEach(function(t) {
+                t.classList.toggle('active', t.dataset.value === sel.value && sel.value !== '');
+            });
+        }
+        Object.keys(groups).forEach(syncGroup);
+        // Poll for programmatic changes (form reset, load draft, etc.)
+        setInterval(function() { Object.keys(groups).forEach(syncGroup); }, 600);
+    })();
+    </script>
+
+    <!-- Battery selector -->
+    <script>
+    (function() {
+        var sel = document.getElementById('num-baterias');
+        var cells = document.querySelectorAll('.battery-cell');
+        if (!sel || !cells.length) return;
+        function sync() {
+            var n = parseInt(sel.value, 10);
+            if (isNaN(n)) n = 0;
+            cells.forEach(function(cell) {
+                var v = parseInt(cell.dataset.value, 10);
+                cell.classList.toggle('charged', v <= n && n > 0);
+                cell.classList.toggle('peak', v === n && n > 0);
+            });
+        }
+        cells.forEach(function(cell) {
+            cell.addEventListener('click', function() {
+                sel.value = cell.dataset.value;
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+                sync();
+            });
+        });
+        setInterval(sync, 600);
+        sync();
+    })();
+    </script>
+
+    <!-- Solar potential estimate -->
+    <script>
+    (function() {
+        var consumoEl = document.getElementById('consumo-bimestral');
+        var pagoEl    = document.getElementById('pago-bimestral');
+        var hspEl     = document.getElementById('horas-solar-pico');
+        var sp = document.getElementById('solar-potential');
+        if (!consumoEl || !hspEl || !sp) return;
+        var kwpEl   = document.getElementById('sp-kwp');
+        var panelEl = document.getElementById('sp-paneles');
+        var prodEl  = document.getElementById('sp-produccion');
+        var last = '';
+        function calc() {
+            var key = (consumoEl.value || '') + '|' + (pagoEl ? pagoEl.value : '') + '|' + hspEl.value;
+            if (key === last) return;
+            last = key;
+            var consumo = parseFloat(consumoEl.value);
+            var pago    = pagoEl ? parseFloat(pagoEl.value) : NaN;
+            var hsp     = parseFloat(hspEl.value);
+            var monthly = !isNaN(consumo) ? consumo : (!isNaN(pago) ? pago / 6 : null);
+            if (!monthly || !hsp || hsp <= 0) {
+                sp.classList.remove('active');
+                kwpEl.textContent = '--';
+                panelEl.textContent = '--';
+                prodEl.textContent = '--';
+                return;
+            }
+            var daily  = monthly / 30;
+            var kwp    = daily / hsp / 0.85;
+            var panels = Math.ceil(kwp * 1000 / 550);
+            var annual = kwp * hsp * 365 * 0.85;
+            sp.classList.add('active');
+            kwpEl.textContent   = kwp.toFixed(1);
+            panelEl.textContent = panels;
+            prodEl.textContent  = Math.round(annual).toLocaleString('es-CO');
+        }
+        [consumoEl, pagoEl, hspEl].filter(Boolean).forEach(function(el) {
+            el.addEventListener('input', calc);
+            el.addEventListener('change', calc);
+        });
+        setInterval(calc, 600);
+        calc();
+    })();
+    </script>
+
+    <!-- Photo lightbox -->
+    <script>
+    (function() {
+        var lb       = document.getElementById('photo-lightbox');
+        var lbImg    = document.getElementById('lightbox-img');
+        var posEl    = document.getElementById('lightbox-pos');
+        var btnClose = document.getElementById('lightbox-close');
+        var btnPrev  = document.getElementById('lightbox-prev');
+        var btnNext  = document.getElementById('lightbox-next');
+        if (!lb || !lbImg) return;
+        var currentGallery = null;
+        var currentIndex = 0;
+        function getImages() {
+            if (!currentGallery) return [];
+            return currentGallery.querySelectorAll('.photo-item img');
+        }
+        function update() {
+            var imgs = getImages();
+            if (!imgs.length) { close(); return; }
+            if (currentIndex >= imgs.length) currentIndex = imgs.length - 1;
+            if (currentIndex < 0) currentIndex = 0;
+            lbImg.src = imgs[currentIndex].src;
+            posEl.textContent = (currentIndex + 1) + ' / ' + imgs.length;
+            btnPrev.style.visibility = currentIndex > 0 ? 'visible' : 'hidden';
+            btnNext.style.visibility = currentIndex < imgs.length - 1 ? 'visible' : 'hidden';
+        }
+        function open(gallery, idx) {
+            currentGallery = gallery;
+            currentIndex = idx;
+            update();
+            lb.removeAttribute('hidden');
+            requestAnimationFrame(function() { lb.classList.add('show'); });
+            document.body.style.overflow = 'hidden';
+        }
+        function close() {
+            lb.classList.remove('show');
+            setTimeout(function() { lb.setAttribute('hidden', ''); }, 300);
+            document.body.style.overflow = '';
+            currentGallery = null;
+        }
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.photo-delete')) return;
+            var item = e.target.closest('.photo-item');
+            if (!item || !item.querySelector('img')) return;
+            var gallery = item.closest('.photo-gallery');
+            if (!gallery) return;
+            var items = gallery.querySelectorAll('.photo-item');
+            open(gallery, Array.prototype.indexOf.call(items, item));
+        });
+        btnClose.addEventListener('click', close);
+        btnPrev.addEventListener('click', function() { currentIndex--; update(); });
+        btnNext.addEventListener('click', function() { currentIndex++; update(); });
+        lb.addEventListener('click', function(e) { if (e.target === lb) close(); });
+        document.addEventListener('keydown', function(e) {
+            if (lb.hasAttribute('hidden')) return;
+            if (e.key === 'Escape')     close();
+            if (e.key === 'ArrowLeft')  { currentIndex--; update(); }
+            if (e.key === 'ArrowRight') { currentIndex++; update(); }
+        });
+    })();
+    </script>
+
+    <!-- Visita Registrada celebration -->
+    <script>
+    (function() {
+        var btn   = document.getElementById('btn-guardar');
+        var cel   = document.getElementById('success-celebration');
+        if (!btn || !cel) return;
+        var numEl    = document.getElementById('sc-num');
+        var dateEl   = document.getElementById('sc-date');
+        var timeEl   = document.getElementById('sc-time');
+        var coordsEl = document.getElementById('sc-coords');
+        var btnHist  = document.getElementById('sc-historial');
+        var btnNueva = document.getElementById('sc-nueva');
+        function show() {
+            try {
+                var visitas = JSON.parse(localStorage.getItem('visitas') || '[]');
+                var n = visitas.length || 1;
+                var last = visitas[visitas.length - 1] || {};
+                numEl.textContent = String(n).padStart(3, '0');
+                dateEl.textContent = last.fecha || new Date().toISOString().slice(0,10);
+                timeEl.textContent = last.hora  || new Date().toTimeString().slice(0,5);
+                var gps = last.gpsCoords || last['gps-coords'] || last.coords;
+                coordsEl.textContent = gps ? ('GPS: ' + gps) : 'GPS: no registrado';
+            } catch (e) {
+                numEl.textContent = '001';
+            }
+            cel.removeAttribute('hidden');
+            requestAnimationFrame(function() { cel.classList.add('show'); });
+        }
+        function hide() {
+            cel.classList.remove('show');
+            setTimeout(function() { cel.setAttribute('hidden', ''); }, 400);
+        }
+        btn.addEventListener('click', function() {
+            // Wait for the existing save logic to do its work + show toast
+            setTimeout(function() {
+                var t = document.getElementById('toast');
+                if (t && t.classList.contains('show') && t.classList.contains('success')) {
+                    show();
+                }
+            }, 400);
+        });
+        if (btnHist) btnHist.addEventListener('click', function() {
+            hide();
+            var nav = document.querySelector('[data-action="historial"]');
+            if (nav) setTimeout(function(){ nav.click(); }, 250);
+        });
+        if (btnNueva) btnNueva.addEventListener('click', function() {
+            hide();
+            setTimeout(function(){ location.reload(); }, 250);
+        });
+        cel.addEventListener('click', function(e) {
+            if (e.target === cel) hide();
+        });
+    })();
+    </script>
+
+    <!-- HSP solar visualizer -->
+    <script>
+    (function() {
+        var input = document.getElementById('horas-solar-pico');
+        var viz   = document.getElementById('hsp-viz');
+        if (!input || !viz) return;
+        var qEl = viz.querySelector('.hsp-quality');
+        var rEl = viz.querySelector('.hsp-readout');
+        var lastVal = null;
+        function update() {
+            var raw = input.value;
+            if (raw === lastVal) return;
+            lastVal = raw;
+            var v = parseFloat(raw);
+            if (isNaN(v) || raw === '') {
+                viz.style.setProperty('--pct', '0%');
+                viz.dataset.quality = '';
+                viz.classList.remove('has-value');
+                qEl.textContent = '— Sin medir';
+                rEl.innerHTML = '--<small>HSP</small>';
+                return;
+            }
+            var pct = Math.max(0, Math.min(100, ((v - 1) / 5) * 100));
+            viz.style.setProperty('--pct', pct + '%');
+            viz.classList.add('has-value');
+            rEl.innerHTML = v.toFixed(1) + '<small>HSP</small>';
+            var q, label;
+            if      (v < 3) { q = 'low';   label = 'Pobre'; }
+            else if (v < 4) { q = 'mid';   label = 'Aceptable'; }
+            else if (v < 5) { q = 'good';  label = 'Bueno'; }
+            else if (v < 6) { q = 'great'; label = 'Muy Bueno'; }
+            else            { q = 'best';  label = 'Excelente'; }
+            viz.dataset.quality = q;
+            qEl.textContent = label;
+        }
+        input.addEventListener('input', update);
+        input.addEventListener('change', update);
+        // Poll for programmatic value changes (auto-fetch from GPS)
+        setInterval(update, 500);
+        update();
+    })();
+    </script>
+
+    <!-- Auto-logout por inactividad (30 min) -->
+    <script>
+    (function() {
+        var IDLE_LIMIT = 30 * 60 * 1000; // 30 minutos
+        var WARN_BEFORE = 5 * 60 * 1000; // avisar 5 min antes
+        var logoutTimer = null;
+        var warnTimer = null;
+        var warned = false;
+        var authReady = false;
+
+        function safeLogout() {
+            try {
+                if (window.firebase && firebase.auth) {
+                    firebase.auth().signOut();
+                }
+            } catch (e) {}
+        }
+
+        function showToastMsg(msg, ms) {
+            var t = document.getElementById('toast');
+            if (!t) return;
+            t.textContent = msg;
+            t.className = 'toast show';
+            setTimeout(function() {
+                if (t.className.indexOf('show') !== -1) t.className = 'toast';
+            }, ms || 5000);
+        }
+
+        function resetTimers() {
+            if (!authReady) return;
+            warned = false;
+            if (logoutTimer) clearTimeout(logoutTimer);
+            if (warnTimer)   clearTimeout(warnTimer);
+            warnTimer = setTimeout(function() {
+                if (!warned) {
+                    warned = true;
+                    showToastMsg('⏰ Tu sesión cerrará en 5 minutos por inactividad. Movete para mantenerla activa.', 8000);
+                }
+            }, IDLE_LIMIT - WARN_BEFORE);
+            logoutTimer = setTimeout(function() {
+                showToastMsg('⏰ Sesión cerrada por inactividad', 4000);
+                setTimeout(safeLogout, 1500);
+            }, IDLE_LIMIT);
+        }
+
+        var events = ['mousemove','mousedown','keydown','touchstart','scroll','click'];
+        events.forEach(function(ev) {
+            document.addEventListener(ev, resetTimers, { passive: true });
+        });
+
+        // Arranque solo cuando hay sesión activa
+        var waitAuth = setInterval(function() {
+            if (window.firebase && firebase.auth) {
+                clearInterval(waitAuth);
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        authReady = true;
+                        resetTimers();
+                    } else {
+                        authReady = false;
+                        if (logoutTimer) clearTimeout(logoutTimer);
+                        if (warnTimer)   clearTimeout(warnTimer);
+                    }
+                });
+            }
+        }, 200);
+    })();
+    </script>
+
+    <!-- Theme toggle handler -->
+    <script>
+    (function() {
+        var btn = document.getElementById('btn-theme-toggle');
+        if (!btn) return;
+        var icon = btn.querySelector('.theme-toggle-icon');
+        function paint(t) {
+            document.documentElement.dataset.theme = t;
+            if (icon) icon.textContent = t === 'light' ? '🌙' : '☀️';
+            btn.title = t === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro';
+        }
+        paint(document.documentElement.dataset.theme || 'dark');
+        btn.addEventListener('click', function() {
+            var now = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+            paint(now);
+            localStorage.setItem('theme', now);
+        });
+    })();
+    </script>
 
     <!-- Splash Screen Script -->
     <script>

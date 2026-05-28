@@ -8,6 +8,7 @@
     let currentStep = 1;
     let photos = [];
     let techoPhotos = [];
+    let editingVisitaId = null;  // ID de la visita siendo editada (null = nueva)
     let firmaCtx, firmaCanvas, firmaDibujando = false;
 
     document.addEventListener('DOMContentLoaded', init);
@@ -1087,9 +1088,26 @@
             btnGuardar.addEventListener('click', () => {
                 const data = recolectarDatos();
                 const visitas = JSON.parse(localStorage.getItem('visitas_solar') || '[]');
-                visitas.push(data);
+                if (editingVisitaId !== null) {
+                    // Editando: reemplazar la visita existente preservando el id original
+                    const idx = visitas.findIndex(v => v.id === editingVisitaId);
+                    if (idx >= 0) {
+                        data.id = editingVisitaId;
+                        data.creadoEn = visitas[idx].creadoEn || data.creadoEn;
+                        data.actualizadoEn = new Date().toISOString();
+                        visitas[idx] = data;
+                        showToast('Visita actualizada ✓', 'success');
+                    } else {
+                        visitas.push(data);
+                        showToast('Visita guardada ✓', 'success');
+                    }
+                    editingVisitaId = null;
+                    actualizarBannerEdicion();
+                } else {
+                    visitas.push(data);
+                    showToast('Visita guardada ✓', 'success');
+                }
                 localStorage.setItem('visitas_solar', JSON.stringify(visitas));
-                showToast('Visita guardada ✓', 'success');
                 updateConfigInfo();
             });
         }
@@ -1110,7 +1128,7 @@
                 btnOneDrive.textContent = '⏳ Generando...';
                 try {
                     const buffer = await generarExcelBuffer(data);
-                    const fileName = 'Visita_' + (data.cliente || 'cliente').replace(/\s+/g, '_') + '_' + data.fecha + '.xlsx';
+                    const fileName = 'VisitaTecnica_' + (data.cliente || 'cliente').replace(/\s+/g, '_') + '_' + (data.fecha || new Date().toISOString().slice(0,10)) + '.xlsx';
                     if (window.subirAOneDrive) {
                         btnOneDrive.textContent = '⏳ Subiendo...';
                         await window.subirAOneDrive(buffer, fileName);
@@ -1132,7 +1150,7 @@
 
     function generarExcel(data) {
         construirWorkbookVisita(data).then(workbook => {
-            const fileName = 'Visita_Solar_' + (data.cliente || 'cliente').replace(/\s+/g, '_') + '_' + data.fecha + '.xlsx';
+            const fileName = 'VisitaTecnica_' + (data.cliente || 'cliente').replace(/\s+/g, '_') + '_' + (data.fecha || new Date().toISOString().slice(0,10)) + '.xlsx';
             workbook.xlsx.writeBuffer().then(buffer => {
                 saveAs(new Blob([buffer]), fileName);
                 showToast('📊 Excel descargado: ' + fileName, 'success');
@@ -1166,13 +1184,16 @@
             ? `https://www.google.com/maps/search/?api=1&query=${coordNums[0]},${coordNums[1]}`
             : null;
 
+        // Logo IDs (assigned later, after logos are loaded for Portada)
+        let logoEcoId = null, logoSolixId = null;
+
         // ── Helpers ───────────────────────────────────────────────
         function pageHeader(ws, title, cols) {
             const L = String.fromCharCode(64 + cols);
-            // Fila 1: Ambas empresas + título en una sola línea
+            // Fila 1: Banda navy con título centrado (sin logos para evitar superposición)
             ws.mergeCells(`A1:${L}1`);
             const h = ws.getCell('A1');
-            h.value = '☀️  ECOWATT E.S.P   ·   SOLIX SAS   —   ' + title;
+            h.value = '☀  ECOWATT E.S.P   ·   SOLIX SAS   —   ' + title;
             h.fill=fill(AZUL); h.font={name:'Calibri',bold:true,size:14,color:{argb:WHITE}};
             h.alignment={horizontal:'center',vertical:'middle'}; ws.getRow(1).height=34;
             // Fila 2: Metadata
@@ -1182,6 +1203,19 @@
             s.fill=fill(AZULM); s.font={name:'Calibri',size:9,italic:true,color:{argb:WHITE}};
             s.alignment={horizontal:'center'}; ws.getRow(2).height=15;
             ws.getRow(3).height=8;
+        }
+
+        function pageFooter(ws, cols) {
+            const L = String.fromCharCode(64 + cols);
+            const r = (ws.lastRow ? ws.lastRow.number : 1) + 2;
+            ws.getRow(r-1).height = 4;
+            ws.mergeCells(`A${r}:${L}${r}`);
+            const f = ws.getCell(`A${r}`);
+            f.value = '☀ ECOWATT E.S.P  ×  SOLIX SAS   ·   Sistemas Fotovoltaicos   ·   ID #' + (data.id || '—') + '   ·   ' + new Date().toLocaleDateString('es-CO');
+            f.fill = fill(AZUL);
+            f.font = {name:'Calibri', size:8, italic:true, color:{argb:WHITE}};
+            f.alignment = {horizontal:'center', vertical:'middle'};
+            ws.getRow(r).height = 18;
         }
 
         function secH(ws, row, text, fillColor, cols) {
@@ -1252,8 +1286,225 @@
 
         const blank=(ws,row)=>{ ws.getRow(row).height=6; };
 
+        // ── Helper: cargar imagen como base64 (para logos del header) ──
+        async function loadImageBase64(url) {
+            try {
+                const r = await fetch(url);
+                const b = await r.blob();
+                return await new Promise(function(res) {
+                    const fr = new FileReader();
+                    fr.onloadend = function() { res(fr.result); };
+                    fr.readAsDataURL(b);
+                });
+            } catch (e) { return null; }
+        }
+
         // ══════════════════════════════════════════════════════════
-        // HOJA 1 — DATOS DEL CLIENTE
+        // HOJA 1 — PORTADA (Cover Page)
+        // ══════════════════════════════════════════════════════════
+        const wsP = workbook.addWorksheet('🏠 Portada');
+        wsP.properties.tabColor = { argb: NARANJA };
+        wsP.columns = [{width:20},{width:18},{width:18},{width:18},{width:20}];
+        wsP.views = [{showGridLines: false}];
+
+        // Cargar logos para embeber (UNA sola vez para toda la workbook)
+        const logoEco = await loadImageBase64('icons/logo-ecowatt.png');
+        const logoSolix = await loadImageBase64('icons/logo-solix.png');
+        if (logoEco)   { try { logoEcoId   = workbook.addImage({base64: logoEco,   extension: 'png'}); } catch(e) {} }
+        if (logoSolix) { try { logoSolixId = workbook.addImage({base64: logoSolix, extension: 'png'}); } catch(e) {} }
+
+        let pr = 1;
+        // Spacer top
+        wsP.getRow(pr++).height = 6;
+
+        // Logo banner row (white background)
+        const logoRow = pr;
+        wsP.getRow(pr).height = 64;
+        wsP.mergeCells(`A${pr}:E${pr}`);
+        const logoBg = wsP.getCell(`A${pr}`);
+        logoBg.fill = fill(WHITE);
+        logoBg.border = {bottom:{style:'medium',color:{argb:NARANJA}}};
+        pr++;
+        if (logoEcoId !== null) {
+            try { wsP.addImage(logoEcoId, {tl:{col:0.4, row:logoRow-0.92}, ext:{width:130, height:58}}); } catch (e) {}
+        }
+        if (logoSolixId !== null) {
+            try { wsP.addImage(logoSolixId, {tl:{col:3.5, row:logoRow-0.88}, ext:{width:100, height:50}}); } catch (e) {}
+        }
+
+        // Hero title
+        wsP.mergeCells(`A${pr}:E${pr}`);
+        const heroC = wsP.getCell(`A${pr}`);
+        heroC.value = 'REPORTE DE VISITA TÉCNICA SOLAR';
+        heroC.fill = fill(AZUL);
+        heroC.font = {name:'Calibri', bold:true, size:20, color:{argb:NARANJA}};
+        heroC.alignment = {horizontal:'center', vertical:'middle'};
+        wsP.getRow(pr).height = 42;
+        pr++;
+
+        // Subtitle bar
+        wsP.mergeCells(`A${pr}:E${pr}`);
+        const subC = wsP.getCell(`A${pr}`);
+        subC.value = 'ECOWATT E.S.P  ·  SOLIX SAS  —  Sistemas Fotovoltaicos';
+        subC.fill = fill(AZULM);
+        subC.font = {name:'Calibri', size:10, italic:true, color:{argb:WHITE}};
+        subC.alignment = {horizontal:'center'};
+        wsP.getRow(pr).height = 20;
+        pr++;
+        blank(wsP, pr++);
+
+        // Helper para filas label/value de la portada
+        const pRow = (label, value, fillColor) => {
+            const c1 = wsP.getCell(`A${pr}`);
+            c1.value = label; c1.fill = fill(GRIS);
+            c1.font = {name:'Calibri', bold:true, size:10}; c1.border = bdr;
+            c1.alignment = {vertical:'middle', indent:1};
+            wsP.mergeCells(`B${pr}:E${pr}`);
+            const c2 = wsP.getCell(`B${pr}`);
+            c2.value = (value !== undefined && value !== null && String(value).trim() !== '') ? value : '-';
+            c2.fill = fillColor ? fill(fillColor) : null;
+            c2.font = {name:'Calibri', size:11, bold:true, color:{argb:AZUL}};
+            c2.border = bdr;
+            c2.alignment = {vertical:'middle', indent:1, wrapText:true};
+            wsP.getRow(pr).height = 22;
+            pr++;
+        };
+
+        // Info de la visita
+        secH(wsP, pr++, '📋  INFORMACIÓN DE LA VISITA', AZUL, 5);
+        pRow('👤  Cliente', data.cliente, BLUECL);
+        pRow('📅  Fecha de Visita', data.fecha, BLUECL);
+        pRow('🕐  Hora', data.hora, BLUECL);
+        pRow('🧑‍🔧  Asesor / Técnico', data.responsableVisita, BLUECL);
+        pRow('📞  Teléfono', data.telefono, BLUECL);
+        pRow('📧  Email', data.email, BLUECL);
+        pRow('📍  Dirección', data.direccion, BLUECL);
+        // GPS + Maps link
+        {
+            const c1 = wsP.getCell(`A${pr}`);
+            c1.value = '🗺️  Ubicación GPS'; c1.fill = fill(GRIS);
+            c1.font = {name:'Calibri', bold:true, size:10}; c1.border = bdr;
+            c1.alignment = {vertical:'middle', indent:1};
+            wsP.mergeCells(`B${pr}:E${pr}`);
+            const c2 = wsP.getCell(`B${pr}`);
+            if (mapsUrl) {
+                c2.value = {text: (coordClean || 'Sin GPS') + '   ▶ Abrir en Google Maps', hyperlink: mapsUrl};
+                c2.font = {name:'Calibri', size:11, bold:true, color:{argb:'FF0563C1'}, underline:true};
+            } else {
+                c2.value = coordClean || '-';
+                c2.font = {name:'Calibri', size:11, bold:true, color:{argb:AZUL}};
+            }
+            c2.fill = fill(BLUECL); c2.border = bdr;
+            c2.alignment = {vertical:'middle', indent:1};
+            wsP.getRow(pr).height = 22;
+            pr++;
+        }
+        blank(wsP, pr++);
+
+        // Viabilidad badge GRANDE
+        const viabKey = data.viabilidad;
+        const viabTxt = vTxt[viabKey] || 'SIN EVALUAR';
+        const viabColor = vFill[viabKey] || 'FF9E9E9E';
+        secH(wsP, pr++, '🏆  VIABILIDAD DEL PROYECTO', viabColor, 5);
+        wsP.mergeCells(`A${pr}:E${pr}`);
+        const viabCell = wsP.getCell(`A${pr}`);
+        viabCell.value = viabTxt;
+        viabCell.fill = fill(viabColor);
+        viabCell.font = {name:'Calibri', bold:true, size:26, color:{argb: viabKey==='regular' ? 'FF000000' : WHITE}};
+        viabCell.alignment = {horizontal:'center', vertical:'middle'};
+        viabCell.border = bdr;
+        wsP.getRow(pr).height = 60;
+        pr++;
+        blank(wsP, pr++);
+
+        // POTENCIAL SOLAR — 3 stat blocks horizontales
+        secH(wsP, pr++, '☀️  POTENCIAL SOLAR ESTIMADO', NARANJA, 5);
+        const ps = data.potencialSolar;
+        if (ps) {
+            // Row 1: valores grandes
+            // Stat 1 (A-B): kWp
+            wsP.mergeCells(`A${pr}:B${pr}`);
+            const s1 = wsP.getCell(`A${pr}`);
+            s1.value = ps.kwp; s1.fill = fill(ORANGECL);
+            s1.font = {name:'Calibri', bold:true, size:28, color:{argb:NARANJA}};
+            s1.alignment = {horizontal:'center', vertical:'middle'};
+            s1.border = bdr;
+            // Stat 2 (C): paneles
+            const s2 = wsP.getCell(`C${pr}`);
+            s2.value = ps.panels; s2.fill = fill(ORANGECL);
+            s2.font = {name:'Calibri', bold:true, size:28, color:{argb:NARANJA}};
+            s2.alignment = {horizontal:'center', vertical:'middle'};
+            s2.border = bdr;
+            // Stat 3 (D-E): kWh/año
+            wsP.mergeCells(`D${pr}:E${pr}`);
+            const s3 = wsP.getCell(`D${pr}`);
+            s3.value = ps.anual.toLocaleString('es-CO'); s3.fill = fill(ORANGECL);
+            s3.font = {name:'Calibri', bold:true, size:24, color:{argb:NARANJA}};
+            s3.alignment = {horizontal:'center', vertical:'middle'};
+            s3.border = bdr;
+            wsP.getRow(pr).height = 46;
+            pr++;
+
+            // Row 2: units
+            wsP.mergeCells(`A${pr}:B${pr}`);
+            const u1 = wsP.getCell(`A${pr}`); u1.value = 'kWp DEL SISTEMA';
+            u1.fill = fill(ORANGECL); u1.font = {name:'Calibri', bold:true, size:9, color:{argb:AZULM}};
+            u1.alignment = {horizontal:'center'}; u1.border = bdr;
+            const u2 = wsP.getCell(`C${pr}`); u2.value = 'PANELES 550W';
+            u2.fill = fill(ORANGECL); u2.font = {name:'Calibri', bold:true, size:9, color:{argb:AZULM}};
+            u2.alignment = {horizontal:'center'}; u2.border = bdr;
+            wsP.mergeCells(`D${pr}:E${pr}`);
+            const u3 = wsP.getCell(`D${pr}`); u3.value = 'kWh / AÑO ESTIMADOS';
+            u3.fill = fill(ORANGECL); u3.font = {name:'Calibri', bold:true, size:9, color:{argb:AZULM}};
+            u3.alignment = {horizontal:'center'}; u3.border = bdr;
+            wsP.getRow(pr).height = 18;
+            pr++;
+            blank(wsP, pr++);
+
+            pRow('☀️  Calidad HSP', ps.calidadHSP + '   (' + (data.mediciones.horasSolarPico || '-') + ' HSP/día)', ORANGECL);
+            pRow('⚡  Consumo Mensual Cliente', ps.consumoMensual + ' kWh/mes', ORANGECL);
+            pRow('🔬  Fórmula', '(consumo/30) ÷ HSP ÷ 0.85 → kWp  ·  kWp×1000÷550 → paneles', GRIS);
+        } else {
+            wsP.mergeCells(`A${pr}:E${pr}`);
+            const noPs = wsP.getCell(`A${pr}`);
+            noPs.value = '⚠ Datos insuficientes para estimar (faltan: consumo mensual y/o HSP)';
+            noPs.fill = fill(GRIS);
+            noPs.font = {name:'Calibri', italic:true, size:10, color:{argb:'FF666666'}};
+            noPs.alignment = {horizontal:'center', vertical:'middle'};
+            noPs.border = bdr;
+            wsP.getRow(pr).height = 32;
+            pr++;
+        }
+        blank(wsP, pr++);
+
+        // Brújula solar embebida
+        if (data.brujulaSolarImg && data.brujulaSolarImg.startsWith('data:image')) {
+            secH(wsP, pr++, '🧭  BRÚJULA SOLAR — TRAYECTORIA DEL DÍA', AZULM, 5);
+            const compassRow = pr;
+            wsP.getRow(pr).height = 175;
+            wsP.mergeCells(`A${pr}:E${pr}`);
+            wsP.getCell(`A${pr}`).fill = fill(WHITE);
+            wsP.getCell(`A${pr}`).border = bdr;
+            try {
+                const bImg = workbook.addImage({base64: data.brujulaSolarImg, extension: 'png'});
+                wsP.addImage(bImg, {tl:{col:1.6, row:compassRow-0.95}, ext:{width:210, height:170}});
+            } catch (e) {}
+            pr++;
+            blank(wsP, pr++);
+        }
+
+        // Footer
+        wsP.mergeCells(`A${pr}:E${pr}`);
+        const footC = wsP.getCell(`A${pr}`);
+        const idStr = data.id ? ('ID #' + data.id) : '';
+        footC.value = 'Generado ' + new Date().toLocaleString('es-CO') + '   ·   ' + idStr + '   ·   ECOWATT E.S.P × SOLIX SAS';
+        footC.fill = fill(AZUL);
+        footC.font = {name:'Calibri', size:9, italic:true, color:{argb:WHITE}};
+        footC.alignment = {horizontal:'center', vertical:'middle'};
+        wsP.getRow(pr).height = 22;
+
+        // ══════════════════════════════════════════════════════════
+        // HOJA 2 — DATOS DEL CLIENTE
         // ══════════════════════════════════════════════════════════
         const ws2=workbook.addWorksheet('👤 Datos del Cliente');
         let r=4;
@@ -1296,6 +1547,7 @@
         motCell.font={name:'Calibri',size:11}; motCell.border=bdr;
         motCell.alignment={wrapText:true,vertical:'middle',indent:1}; ws2.getRow(r).height=36;
         ws2.columns=[{width:36},{width:30},{width:10}];
+        pageFooter(ws2, 3);
 
         // ══════════════════════════════════════════════════════════
         // HOJA 3 — EVALUACIÓN TÉCNICA
@@ -1348,6 +1600,7 @@
         obsC.font={name:'Calibri',size:10}; obsC.border=bdr;
         obsC.alignment={wrapText:true,vertical:'top'}; ws3.getRow(r).height=60;
         ws3.columns=[{width:46},{width:24}];
+        pageFooter(ws3, 2);
 
         // ══════════════════════════════════════════════════════════
         // HOJA 4 — ANÁLISIS SOLAR Y GEOLOCALIZACIÓN
@@ -1400,6 +1653,7 @@
         solRow(ws4,r++,'📐','Inclinación Óptima de los Paneles',sol.inclinacionOptima,'');
         solRow(ws4,r++,'🌡️','Posición Solar al momento de la visita',sol.posicionSolarActual,'');
         ws4.columns=[{width:40},{width:22},{width:28}];
+        pageFooter(ws4, 3);
 
         // ══════════════════════════════════════════════════════════
         // HOJA 5 — MEDICIONES DEL SITIO
@@ -1464,6 +1718,7 @@
         obsMed.font={name:'Calibri',size:10}; obsMed.border=bdr;
         obsMed.alignment={wrapText:true,vertical:'top'}; ws5.getRow(r).height=50;
         ws5.columns=[{width:40},{width:22},{width:20}];
+        pageFooter(ws5, 3);
 
         // ══════════════════════════════════════════════════════════
         // HOJA 6 — CONCLUSIONES
@@ -1505,6 +1760,7 @@
             ws6.getCell(`A${r}`).alignment={wrapText:true,vertical:'top'}; ws6.getRow(r).height=40;
         }
         ws6.columns=[{width:28},{width:60}];
+        pageFooter(ws6, 2);
 
         // ══════════════════════════════════════════════════════════
         // HOJA 7 — EVIDENCIA FOTOGRÁFICA
@@ -1580,6 +1836,7 @@
             wsFotos.getRow(5).height=30;
         }
         wsFotos.columns=[{width:20},{width:16},{width:40}];
+        pageFooter(wsFotos, 3);
 
         return workbook;
     }
@@ -1720,6 +1977,32 @@
         data.mediciones.areaLargo = area1.largo || '';
         data.mediciones.areaAncho = area1.ancho || '';
         data.mediciones.areaUtil = area1.areaUtil || '';
+
+        // Cálculo de Potencial Solar (mismo que el visualizador en vivo)
+        data.potencialSolar = (function() {
+            const consumo = parseFloat(data.ultimoConsumoMes);
+            const pago    = parseFloat(data.consumo6Meses);
+            const h       = parseFloat(data.mediciones.horasSolarPico);
+            const mensual = !isNaN(consumo) ? consumo : (!isNaN(pago) ? pago / 6 : null);
+            if (!mensual || !h || h <= 0) return null;
+            const daily   = mensual / 30;
+            const kwp     = daily / h / 0.85;
+            const panels  = Math.ceil(kwp * 1000 / 550);
+            const annual  = kwp * h * 365 * 0.85;
+            let calidad;
+            if      (h < 3) calidad = '🔵 Pobre';
+            else if (h < 4) calidad = '🟡 Aceptable';
+            else if (h < 5) calidad = '🟠 Bueno';
+            else if (h < 6) calidad = '🟢 Muy Bueno';
+            else            calidad = '🌟 Excelente';
+            return {
+                kwp: kwp.toFixed(2),
+                panels: panels,
+                anual: Math.round(annual),
+                calidadHSP: calidad,
+                consumoMensual: mensual.toFixed(0)
+            };
+        })();
 
         return data;
     }
@@ -2065,25 +2348,107 @@
         const container = document.getElementById('historial-list');
 
         if (visitas.length === 0) {
-            container.innerHTML = '<p class="empty-state">No hay visitas guardadas</p>';
+            container.innerHTML =
+                '<div class="empty-state-pro">' +
+                '  <svg class="es-illustration" viewBox="0 0 240 180" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+                '    <defs>' +
+                '      <radialGradient id="esSun"><stop offset="0%" stop-color="#FFE89A"/><stop offset="60%" stop-color="#FFD449"/><stop offset="100%" stop-color="#FF9A1F"/></radialGradient>' +
+                '    </defs>' +
+                '    <circle cx="180" cy="42" r="22" fill="url(#esSun)" opacity="0.95"><animate attributeName="r" values="22;24;22" dur="3s" repeatCount="indefinite"/></circle>' +
+                '    <g stroke="#FFD449" stroke-width="2.5" stroke-linecap="round" opacity="0.75">' +
+                '      <line x1="180" y1="5"   x2="180" y2="14"/>' +
+                '      <line x1="180" y1="70"  x2="180" y2="79"/>' +
+                '      <line x1="143" y1="42"  x2="152" y2="42"/>' +
+                '      <line x1="208" y1="42"  x2="217" y2="42"/>' +
+                '      <line x1="154" y1="16"  x2="160" y2="22"/>' +
+                '      <line x1="200" y1="62"  x2="206" y2="68"/>' +
+                '      <line x1="154" y1="68"  x2="160" y2="62"/>' +
+                '      <line x1="200" y1="22"  x2="206" y2="16"/>' +
+                '    </g>' +
+                '    <g>' +
+                '      <polygon points="40,105 78,82 122,105 84,128" fill="#1B2E5A" stroke="#FFB347" stroke-width="1.5"/>' +
+                '      <line x1="58" y1="93" x2="103" y2="116" stroke="#FFB347" stroke-width="0.8" opacity="0.55"/>' +
+                '      <line x1="78" y1="82" x2="84"  y2="128" stroke="#FFB347" stroke-width="0.8" opacity="0.55"/>' +
+                '      <line x1="100" y1="93" x2="62" y2="116" stroke="#FFB347" stroke-width="0.6" opacity="0.4"/>' +
+                '      <polygon points="135,105 173,82 217,105 179,128" fill="#0E1B33" stroke="#FFB347" stroke-width="1.5"/>' +
+                '      <line x1="153" y1="93" x2="198" y2="116" stroke="#FFB347" stroke-width="0.8" opacity="0.55"/>' +
+                '      <line x1="173" y1="82" x2="179" y2="128" stroke="#FFB347" stroke-width="0.8" opacity="0.55"/>' +
+                '      <line x1="195" y1="93" x2="157" y2="116" stroke="#FFB347" stroke-width="0.6" opacity="0.4"/>' +
+                '    </g>' +
+                '    <line x1="20" y1="155" x2="220" y2="155" stroke="#FFD449" stroke-width="1" stroke-dasharray="3,5" opacity="0.4"/>' +
+                '  </svg>' +
+                '  <h3>Ninguna visita registrada todavía</h3>' +
+                '  <p>Tus visitas técnicas guardadas aparecerán acá con potencial estimado, ubicación, viabilidad y acceso rápido al reporte Excel.</p>' +
+                '  <button class="btn btn-primary" onclick="document.querySelector(\'[data-action=nueva-visita]\').click()">Empezar primera visita →</button>' +
+                '</div>';
             return;
         }
 
-        container.innerHTML = visitas.slice().reverse().map(v =>
-            '<div class="historial-card">' +
-            '  <div class="historial-card-info">' +
-            '    <h4>☀️ ' + (v.cliente || 'Sin nombre') + '</h4>' +
-            '    <p>📅 ' + v.fecha + ' ' + v.hora + '</p>' +
-            '    <p>📍 ' + (v.direccion || 'Sin dirección') + '</p>' +
-            (v.mediciones?.potenciaSistema ? '    <p>⚡ ' + v.mediciones.potenciaSistema + ' kWp - ' + (v.mediciones.panelesEstimados || '?') + ' paneles</p>' : '') +
-            (v.viabilidad ? '    <span class="estado-badge ' + v.viabilidad + '">' + v.viabilidad.toUpperCase().replace('-', ' ') + '</span>' : '') +
-            '  </div>' +
-            '  <div class="historial-card-actions">' +
-            '    <button class="btn btn-primary btn-small" onclick="window.appExportarVisita(' + v.id + ')">📊</button>' +
-            '    <button class="btn btn-danger btn-small" onclick="window.appEliminarVisita(' + v.id + ')">🗑️</button>' +
-            '  </div>' +
-            '</div>'
-        ).join('');
+        // Calcular potencial al vuelo si no está guardado (compat con visitas viejas)
+        function potencial(v) {
+            if (v.potencialSolar) return v.potencialSolar;
+            const consumo = parseFloat(v.ultimoConsumoMes);
+            const pago    = parseFloat(v.consumo6Meses);
+            const h       = parseFloat(v.mediciones?.horasSolarPico);
+            const mensual = !isNaN(consumo) ? consumo : (!isNaN(pago) ? pago / 6 : null);
+            if (!mensual || !h || h <= 0) return null;
+            const kwp = mensual / 30 / h / 0.85;
+            return {
+                kwp: kwp.toFixed(2),
+                panels: Math.ceil(kwp * 1000 / 550),
+                anual: Math.round(kwp * h * 365 * 0.85)
+            };
+        }
+        function hspQuality(hsp) {
+            const h = parseFloat(hsp);
+            if (isNaN(h)) return { label: '—', cls: 'na' };
+            if (h < 3)   return { label: 'Pobre',     cls: 'low' };
+            if (h < 4)   return { label: 'Aceptable', cls: 'mid' };
+            if (h < 5)   return { label: 'Bueno',     cls: 'good' };
+            if (h < 6)   return { label: 'Muy Bueno', cls: 'great' };
+                          return { label: 'Excelente', cls: 'best' };
+        }
+        function coords(v) {
+            const c = v.gps || v.analisisSolar?.coordenadas || '';
+            const m = c.match(/-?\d+\.\d+/g);
+            return m && m.length >= 2 ? m[0].slice(0,7) + ', ' + m[1].slice(0,8) : (c || '—');
+        }
+        const viabLabel = { excelente:'🟢 EXCELENTE', bueno:'🔵 BUENO', regular:'🟡 REGULAR', dificil:'🟠 DIFÍCIL', 'no-viable':'🔴 NO VIABLE' };
+
+        container.innerHTML = visitas.slice().reverse().map(v => {
+            const ps = potencial(v);
+            const hsp = hspQuality(v.mediciones?.horasSolarPico);
+            const viab = v.viabilidad || 'na';
+            return (
+                '<div class="historial-card" data-viab="' + viab + '">' +
+                '  <div class="hc-band"></div>' +
+                '  <div class="hc-body">' +
+                '    <div class="hc-top">' +
+                '      <div class="hc-title">' +
+                '        <h4>' + (v.cliente || 'Sin nombre') + '</h4>' +
+                '        <span class="hc-date">' + (v.fecha || '—') + ' · ' + (v.hora || '—') + '</span>' +
+                '      </div>' +
+                (v.viabilidad ? '<span class="estado-badge ' + v.viabilidad + '">' + (viabLabel[v.viabilidad] || v.viabilidad.toUpperCase()) + '</span>' : '<span class="estado-badge na">— SIN EVALUAR</span>') +
+                '    </div>' +
+                '    <div class="hc-meta">' +
+                '      <div class="hc-meta-row"><span class="hc-meta-icon">📍</span><span>' + (v.direccion || 'Sin dirección') + '</span></div>' +
+                '      <div class="hc-meta-row mono"><span class="hc-meta-icon">🛰️</span><span>' + coords(v) + '</span></div>' +
+                '    </div>' +
+                '    <div class="hc-stats">' +
+                '      <div class="hc-stat"><span class="hc-stat-value">' + (ps ? ps.kwp : '—') + '</span><span class="hc-stat-unit">kWp</span></div>' +
+                '      <div class="hc-stat"><span class="hc-stat-value">' + (ps ? ps.panels : '—') + '</span><span class="hc-stat-unit">paneles</span></div>' +
+                '      <div class="hc-stat"><span class="hc-stat-value">' + (ps ? ps.anual.toLocaleString('es-CO') : '—') + '</span><span class="hc-stat-unit">kWh/año</span></div>' +
+                '      <div class="hc-stat hc-hsp hsp-' + hsp.cls + '"><span class="hc-stat-value">☀ ' + (v.mediciones?.horasSolarPico || '—') + '</span><span class="hc-stat-unit">' + hsp.label + '</span></div>' +
+                '    </div>' +
+                '    <div class="hc-actions">' +
+                '      <button class="hc-action hc-action-primary" onclick="window.appCargarVisita(' + v.id + ')">✏️ Cargar</button>' +
+                '      <button class="hc-action" onclick="window.appExportarVisita(' + v.id + ')">📊 Excel</button>' +
+                '      <button class="hc-action hc-action-danger" onclick="window.appEliminarVisita(' + v.id + ')">🗑️</button>' +
+                '    </div>' +
+                '  </div>' +
+                '</div>'
+            );
+        }).join('');
     }
 
     window.appExportarVisita = function (id) {
@@ -2113,7 +2478,7 @@
         ws.addRow(['Observaciones', v.observacionesGenerales]);
         ws.addRow(['Recomendaciones', v.recomendaciones]);
         ws.columns = [{ width: 25 }, { width: 50 }];
-        const fileName = 'Visita_Solar_' + (v.cliente || 'reporte').replace(/\s+/g, '_') + '_' + v.fecha + '.xlsx';
+        const fileName = 'VisitaTecnica_' + (v.cliente || 'reporte').replace(/\s+/g, '_') + '_' + (v.fecha || new Date().toISOString().slice(0,10)) + '.xlsx';
         workbook.xlsx.writeBuffer().then(buffer => {
             saveAs(new Blob([buffer]), fileName);
         });
@@ -2126,6 +2491,176 @@
         localStorage.setItem('visitas_solar', JSON.stringify(visitas));
         renderHistorial();
         showToast('Visita eliminada', 'success');
+    };
+
+    // ===== CARGAR VISITA EXISTENTE PARA EDICIÓN =====
+    function actualizarBannerEdicion() {
+        const banner = document.getElementById('edit-mode-banner');
+        const idEl   = document.getElementById('edit-mode-id');
+        const btnGuardar = document.getElementById('btn-guardar');
+        if (!banner) return;
+        if (editingVisitaId !== null) {
+            banner.hidden = false;
+            if (idEl) {
+                const visitas = JSON.parse(localStorage.getItem('visitas_solar') || '[]');
+                const idx = visitas.findIndex(v => v.id === editingVisitaId);
+                idEl.textContent = idx >= 0 ? String(idx + 1).padStart(3, '0') : '---';
+            }
+            if (btnGuardar) btnGuardar.textContent = '💾 Actualizar Visita';
+        } else {
+            banner.hidden = true;
+            if (btnGuardar) btnGuardar.textContent = '💾 Guardar Visita';
+        }
+    }
+
+    function setVal(id, v) {
+        const el = document.getElementById(id);
+        if (el && v !== undefined && v !== null) {
+            el.value = v;
+        }
+    }
+
+    window.appCargarVisita = function (id) {
+        const visitas = JSON.parse(localStorage.getItem('visitas_solar') || '[]');
+        const v = visitas.find(x => x.id === id);
+        if (!v) { showToast('Visita no encontrada', 'error'); return; }
+
+        editingVisitaId = id;
+
+        // === Datos del Cliente ===
+        setVal('fecha', v.fecha);
+        setVal('hora', v.hora);
+        setVal('empresa', v.cliente);
+        setVal('email-cliente', v.email);
+        setVal('telefono', v.telefono);
+        setVal('direccion', v.direccion);
+        setVal('gps-coords', v.gps);
+        setVal('responsable-visita', v.responsableVisita);
+        setVal('tipo-cliente', v.tipoCliente);
+        setVal('tarifa-cfe', v.tarifaCFE);
+        setVal('kilovatios-contratados', v.kilovatiosContratados);
+        setVal('consumo-bimestral', v.ultimoConsumoMes);
+        setVal('pago-bimestral', v.consumo6Meses);
+
+        // Yes/no baterías + cantidad
+        const reqBat = v.requiereBaterias || '';
+        setVal('requiere-baterias', reqBat);
+        const btnSi = document.getElementById('btn-baterias-si');
+        const btnNo = document.getElementById('btn-baterias-no');
+        if (btnSi) btnSi.classList.toggle('active', reqBat === 'si');
+        if (btnNo) btnNo.classList.toggle('active', reqBat === 'no');
+        const numGroup = document.getElementById('num-baterias-group');
+        if (numGroup) numGroup.style.display = reqBat === 'si' ? '' : 'none';
+        setVal('num-baterias', v.numBaterias);
+
+        // Motivo (con detección de "otro")
+        const motivosKnown = ['ahorro','independencia','sostenibilidad','proyecto-nuevo','respaldo','incentivo'];
+        const motivo = v.motivo || '';
+        if (motivosKnown.includes(motivo)) {
+            setVal('motivo-select', motivo);
+            setVal('motivo-otro', '');
+            const og = document.getElementById('motivo-otro-group');
+            if (og) og.style.display = 'none';
+        } else if (motivo) {
+            setVal('motivo-select', 'otro');
+            setVal('motivo-otro', motivo);
+            const og = document.getElementById('motivo-otro-group');
+            if (og) og.style.display = '';
+        }
+
+        // === Irradiación / mediciones ===
+        const med = v.mediciones || {};
+        setVal('horas-solar-pico', med.horasSolarPico);
+        setVal('irradiancia', med.irradiancia);
+        setVal('inclinacion-techo', med.inclinacionTecho);
+        setVal('azimut', med.azimut);
+        setVal('altura-techo', med.alturaTecho);
+        setVal('voltaje-red', med.voltajeRed);
+        setVal('capacidad-interruptor', med.capacidadInterruptor);
+        setVal('calibre-acometida', med.calibreAcometida);
+
+        // === Evaluación técnica ===
+        setVal('tipo-techo', v.tipoTecho);
+        setVal('tipo-obstaculos', v.tipoObstaculos);
+        setVal('observaciones-checklist', v.observacionesChecklist);
+        setVal('distancia-tablero-paneles', v.distanciaTableroPaneles);
+        setVal('transformador-potencia', v.transformadorPotencia);
+        setVal('proveedor-energia', v.proveedorEnergia);
+        setVal('numero-servicio', v.numeroServicio);
+
+        // Checklist radios
+        document.querySelectorAll('input[type="radio"][name^="check-"]').forEach(r => { r.checked = false; });
+        if (v.checklist) {
+            Object.keys(v.checklist).forEach(name => {
+                const val = v.checklist[name];
+                const radio = document.querySelector('input[name="check-' + name + '"][value="' + val + '"]');
+                if (radio) radio.checked = true;
+            });
+        }
+
+        // === Áreas dinámicas ===
+        const container = document.getElementById('areas-container');
+        if (container && Array.isArray(v.areas)) {
+            // Eliminar áreas extra (dejar solo la 1)
+            container.querySelectorAll('.area-item').forEach((div, i) => { if (i > 0) container.removeChild(div); });
+            // Cargar área 1
+            const a1 = v.areas[0] || {};
+            setVal('area-1-descripcion', a1.descripcion);
+            setVal('area-1-largo', a1.largo);
+            setVal('area-1-ancho', a1.ancho);
+            setVal('area-1-util', a1.areaUtil);
+            // Agregar áreas adicionales
+            const btnAdd = document.getElementById('btn-add-area');
+            for (let i = 1; i < v.areas.length; i++) {
+                if (btnAdd) btnAdd.click();
+                const idx = i + 1;
+                const a = v.areas[i] || {};
+                setVal('area-' + idx + '-descripcion', a.descripcion);
+                setVal('area-' + idx + '-largo', a.largo);
+                setVal('area-' + idx + '-ancho', a.ancho);
+                setVal('area-' + idx + '-util', a.areaUtil);
+            }
+        }
+
+        // === Equipo de medición + observaciones ===
+        setVal('equipo-medicion', v.equipoMedicion);
+        setVal('observaciones-mediciones', v.observacionesMediciones);
+        setVal('observaciones-fotos', v.observacionesFotos);
+
+        // === Conclusión ===
+        setVal('observaciones-generales', v.observacionesGenerales);
+        setVal('recomendaciones', v.recomendaciones);
+        setVal('viabilidad', v.viabilidad);
+
+        // === Fotos (restaurar arrays + re-render) ===
+        photos              = Array.isArray(v.fotos)              ? v.fotos.slice()              : [];
+        techoPhotos         = Array.isArray(v.fotosTecho)         ? v.fotosTecho.slice()         : [];
+        tableroPhotos       = Array.isArray(v.fotosTablero)       ? v.fotosTablero.slice()       : [];
+        transformadorPhotos = Array.isArray(v.fotosTransformador) ? v.fotosTransformador.slice() : [];
+        reciboPhotos        = Array.isArray(v.fotosRecibo)        ? v.fotosRecibo.slice()        : [];
+        area1Photos         = Array.isArray(v.fotosArea1)         ? v.fotosArea1.slice()         : [];
+        equipoPhotos        = Array.isArray(v.fotosEquipo)        ? v.fotosEquipo.slice()        : [];
+        if (typeof renderPhotos === 'function')              renderPhotos();
+        if (typeof renderTechoPhotos === 'function')         renderTechoPhotos();
+        if (typeof renderTableroPhotos === 'function')       renderTableroPhotos();
+        if (typeof renderTransformadorPhotos === 'function') renderTransformadorPhotos();
+        if (typeof renderReciboPhotos === 'function')        renderReciboPhotos();
+        if (typeof renderArea1Photos === 'function')         renderArea1Photos();
+        if (typeof renderEquipoPhotos === 'function')        renderEquipoPhotos();
+
+        // === Banner + navegar a Nueva Visita ===
+        actualizarBannerEdicion();
+        const navNueva = document.querySelector('[data-action="nueva-visita"]');
+        if (navNueva) navNueva.click();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        showToast('✏️ Visita cargada — modificá lo que necesites y guardá', 'success');
+    };
+
+    window.appCancelarEdicion = function () {
+        editingVisitaId = null;
+        actualizarBannerEdicion();
+        showToast('Edición cancelada', 'success');
     };
 
     // ========== CONFIGURACIÓN ==========
