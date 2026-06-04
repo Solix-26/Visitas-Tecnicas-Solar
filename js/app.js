@@ -11,6 +11,42 @@
     let editingVisitaId = null;  // ID de la visita siendo editada (null = nueva)
     let firmaCtx, firmaCanvas, firmaDibujando = false;
 
+    // Etiquetas legibles para el tipo de clima / piso térmico
+    function climaLabel(v) {
+        const map = {
+            calido:   '☀️ Cálido (0–1000 m)',
+            templado: '⛅ Templado (1000–2000 m)',
+            frio:     '❄️ Frío (2000–3000 m)',
+            paramo:   '🏔️ Páramo (>3000 m)'
+        };
+        return map[v] || v || '-';
+    }
+
+    function espacioMBLabel(v) {
+        const map = {
+            'ambos':'Sí — medidor bidireccional y baterías',
+            'solo-medidor':'Solo para medidor bidireccional',
+            'solo-baterias':'Solo para baterías',
+            'ninguno':'No hay espacio suficiente',
+            'requiere-adecuacion':'Requiere adecuación de espacio'
+        };
+        return map[v] || v || '-';
+    }
+
+    function accesoTechoLabel(v) {
+        const map = {
+            'escalera-extension':'Escalera de extensión',
+            'escalera-tijera':'Escalera de tijera',
+            'escalera-marina':'Escalera marina / fija',
+            'escaleras-internas':'Escaleras internas',
+            'acceso-directo':'Acceso directo (terraza)',
+            'rampa':'Rampa',
+            'requiere-andamio':'Requiere andamio / elevador',
+            'sin-acceso':'Sin acceso seguro'
+        };
+        return map[v] || v || '-';
+    }
+
     document.addEventListener('DOMContentLoaded', init);
 
     function init() {
@@ -32,31 +68,55 @@
         initMotivoSelect();
         initTableroPhotos();
         initEquipoPhotos();
+        initEspacioEquiposPhotos();
+        initCondicionales();
         initRemoveAreaButtons();
     }
 
+    // Mostrar/ocultar campos dependientes de un radio Sí/No
+    function initCondicionales() {
+        const reglas = [
+            ['check-cert-carga', 'cert-carga-fecha-group'],
+            ['check-espacio-equipos', 'espacio-equipos-foto-group'],
+        ];
+        reglas.forEach(function (r) {
+            const grupo = document.getElementById(r[1]);
+            if (!grupo) return;
+            function sync() {
+                const sel = document.querySelector('input[name="' + r[0] + '"]:checked');
+                grupo.style.display = (sel && sel.value === 'si') ? '' : 'none';
+            }
+            document.querySelectorAll('input[name="' + r[0] + '"]').forEach(function (radio) {
+                radio.addEventListener('change', sync);
+            });
+            sync();
+        });
+    }
+
     function initBateriasToggle() {
-        const btnSi = document.getElementById('btn-baterias-si');
-        const btnNo = document.getElementById('btn-baterias-no');
-        const hidden = document.getElementById('requiere-baterias');
+        // El selector de número de baterías queda siempre visible.
         const numGroup = document.getElementById('num-baterias-group');
-        if (!btnSi || !btnNo) return;
-        function select(val) {
-            hidden.value = val;
-            btnSi.classList.toggle('active', val === 'si');
-            btnNo.classList.toggle('active', val === 'no');
-            if (numGroup) numGroup.style.display = val === 'si' ? '' : 'none';
-        }
-        btnSi.addEventListener('click', () => select('si'));
-        btnNo.addEventListener('click', () => select('no'));
+        if (numGroup) numGroup.style.display = '';
     }
 
     function initMotivoSelect() {
-        const sel = document.getElementById('motivo-select');
-        const otroGroup = document.getElementById('motivo-otro-group');
-        if (!sel || !otroGroup) return;
-        sel.addEventListener('change', function () {
-            otroGroup.style.display = this.value === 'otro' ? '' : 'none';
+        // Cada entrada: [id del select, id del grupo "otro", valores que disparan el campo]
+        const configs = [
+            ['motivo-select',      'motivo-otro-group',           ['otro']],
+            ['tipo-techo',         'tipo-techo-otro-group',       ['otro']],
+            ['tipo-obstaculos',    'tipo-obstaculos-otro-group',  ['otro', 'otros']],
+            ['tipo-acceso-techo',  'tipo-acceso-techo-otro-group',['otro']],
+        ];
+        configs.forEach(function (cfg) {
+            const sel = document.getElementById(cfg[0]);
+            const otroGroup = document.getElementById(cfg[1]);
+            const triggers = cfg[2];
+            if (!sel || !otroGroup) return;
+            function sync() {
+                otroGroup.style.display = triggers.indexOf(sel.value) !== -1 ? '' : 'none';
+            }
+            sel.addEventListener('change', sync);
+            sync(); // estado inicial (útil al cargar una visita en edición)
         });
     }
 
@@ -219,6 +279,38 @@
             btn.addEventListener('click', () => {
                 equipoPhotos.splice(parseInt(btn.dataset.index), 1);
                 renderEquipoPhotos();
+            });
+        });
+    }
+
+    // ========== FOTOS ESPACIO PARA EQUIPOS ==========
+    let espacioEquiposPhotos = [];
+    function initEspacioEquiposPhotos() {
+        const camInput = document.getElementById('espacio-equipos-camera-input');
+        const galInput = document.getElementById('espacio-equipos-gallery-input');
+        const btnCam = document.getElementById('btn-espacio-equipos-camara');
+        const btnGal = document.getElementById('btn-espacio-equipos-galeria');
+        if (btnCam) btnCam.addEventListener('click', () => camInput.click());
+        if (btnGal) btnGal.addEventListener('click', () => galInput.click());
+        if (camInput) camInput.addEventListener('change', e => handleGenericPhotos(e, espacioEquiposPhotos, 5, renderEspacioEquiposPhotos));
+        if (galInput) galInput.addEventListener('change', e => handleGenericPhotos(e, espacioEquiposPhotos, 5, renderEspacioEquiposPhotos));
+    }
+    function renderEspacioEquiposPhotos() {
+        const gallery = document.getElementById('espacio-equipos-gallery');
+        if (!gallery) return;
+        if (espacioEquiposPhotos.length === 0) {
+            gallery.innerHTML = '<div class="photo-placeholder"><span>📦</span><p>Sin fotos del espacio</p></div>';
+            return;
+        }
+        gallery.innerHTML = espacioEquiposPhotos.map((photo, i) =>
+            '<div class="photo-item"><img src="' + photo + '" alt="Espacio equipos ' + (i+1) + '">' +
+            '<button class="photo-delete" data-index="' + i + '">✕</button>' +
+            '<span class="photo-number">' + (i+1) + '/' + espacioEquiposPhotos.length + '</span></div>'
+        ).join('');
+        gallery.querySelectorAll('.photo-delete').forEach(btn => {
+            btn.addEventListener('click', () => {
+                espacioEquiposPhotos.splice(parseInt(btn.dataset.index), 1);
+                renderEspacioEquiposPhotos();
             });
         });
     }
@@ -509,11 +601,15 @@
 
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
                     document.getElementById('gps-coords').value =
-                        pos.coords.latitude.toFixed(6) + ', ' + pos.coords.longitude.toFixed(6);
+                        lat.toFixed(6) + ', ' + lon.toFixed(6);
                     btn.textContent = '📍 Obtener';
                     btn.disabled = false;
                     showToast('Ubicación obtenida ✓', 'success');
+                    // Intentar obtener la dirección automáticamente (reverse geocoding)
+                    obtenerDireccionDesdeGPS(lat, lon);
                 },
                 (err) => {
                     showToast('Error GPS: ' + err.message, 'error');
@@ -539,6 +635,33 @@
                 }
             });
         }
+    }
+
+    // Reverse geocoding: convierte lat/long en dirección legible (OpenStreetMap Nominatim).
+    // Llena el campo dirección automáticamente; el técnico puede editarlo a mano.
+    function obtenerDireccionDesdeGPS(lat, lon) {
+        const campo = document.getElementById('direccion');
+        if (!campo) return;
+        const url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' +
+            lat + '&lon=' + lon + '&accept-language=es&zoom=18';
+        fetch(url, { headers: { 'Accept': 'application/json' } })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (!data || !data.address) return;
+                const a = data.address;
+                // Armar una dirección compacta tipo Colombia
+                const calle = [a.road, a.house_number].filter(Boolean).join(' #');
+                const barrio = a.neighbourhood || a.suburb || a.quarter || '';
+                const ciudad = a.city || a.town || a.village || a.municipality || '';
+                const depto = a.state || '';
+                const partes = [calle, barrio, ciudad, depto].filter(Boolean);
+                const dir = partes.length ? partes.join(', ') : (data.display_name || '');
+                if (dir) {
+                    campo.value = dir;
+                    showToast('📍 Dirección obtenida — verifica y ajusta si hace falta', 'success');
+                }
+            })
+            .catch(() => { /* sin internet o servicio caído: el técnico la escribe a mano */ });
     }
 
     function runSolarAnalysis() {
@@ -892,6 +1015,35 @@
                 <div class="form-group">
                     <label for="area-${index}-util">Área útil disponible (m²)</label>
                     <input type="number" id="area-${index}-util" step="0.1" placeholder="80.0">
+                </div>
+                <div class="area-orientacion-box">
+                    <span class="area-orientacion-title">📐 Inclinación y Orientación de esta área</span>
+                    <div class="form-group">
+                        <label for="area-${index}-inclinacion">Inclinación del techo (°)</label>
+                        <input type="number" id="area-${index}-inclinacion" step="0.5" placeholder="15">
+                    </div>
+                    <div class="form-group">
+                        <label for="area-${index}-orientacion">Orientación (punto cardinal)</label>
+                        <select id="area-${index}-orientacion">
+                            <option value="">Seleccionar...</option>
+                            <option value="N">N — Norte</option>
+                            <option value="NE">NE — Nororiente</option>
+                            <option value="E">E — Oriente</option>
+                            <option value="SE">SE — Suroriente</option>
+                            <option value="S">S — Sur (óptimo)</option>
+                            <option value="SO">SO — Suroccidente</option>
+                            <option value="O">O — Occidente</option>
+                            <option value="NO">NO — Noroccidente</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="area-${index}-azimut">Azimut / Orientación (°)</label>
+                        <input type="number" id="area-${index}-azimut" step="1" placeholder="180 = Sur">
+                    </div>
+                    <div class="form-group">
+                        <label for="area-${index}-altura">Altura del techo (m)</label>
+                        <input type="number" id="area-${index}-altura" step="0.1" placeholder="3.5">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="area-${index}-fotos">📸 Fotos del área</label>
@@ -1257,8 +1409,8 @@
         }
 
         function checkRow(ws, row, label, estado) {
-            const colors={bien:'FF4CAF50',regular:'FFFFC107',mal:'FFF44336',na:'FF9E9E9E'};
-            const texts={bien:'✅  BIEN',regular:'⚠️  REGULAR',mal:'❌  MAL',na:'➖  N/A'};
+            const colors={si:'FF4CAF50',no:'FFF44336',bien:'FF4CAF50',regular:'FFFFC107',mal:'FFF44336',na:'FF9E9E9E'};
+            const texts={si:'✅  SÍ',no:'❌  NO',bien:'✅  BIEN',regular:'⚠️  REGULAR',mal:'❌  MAL',na:'➖  N/A'};
             const c1=ws.getCell(`A${row}`);
             c1.value=label; c1.fill=fill(GRIS); c1.font={name:'Calibri',size:10}; c1.border=bdr;
             c1.alignment={vertical:'middle',indent:1};
@@ -1530,12 +1682,12 @@
         blank(ws2,r++);
 
         secH(ws2,r++,'⚡  CONSUMO ENERGÉTICO',NARANJA,3);
-        addLV(ws2,r++,'Tarifa CFE / Regulatoria',data.tarifaCFE,ORANGECL,3);
+        addLV(ws2,r++,'Tipo de Clima / Piso Térmico',climaLabel(data.clima),ORANGECL,3);
         addLV(ws2,r++,'Kilovatios Contratados (kW)',data.kilovatiosContratados,ORANGECL,3);
         addLV(ws2,r++,'Proveedor de Energía',data.proveedorEnergia,ORANGECL,3);
         addLV(ws2,r++,'Número del Servicio',data.numeroServicio,ORANGECL,3);
-        addLV(ws2,r++,'¿Requiere Baterías?',data.requiereBaterias==='si'?'Sí':data.requiereBaterias==='no'?'No':'-',ORANGECL,3);
-        if (data.requiereBaterias==='si') addLV(ws2,r++,'Número de Baterías',data.numBaterias,ORANGECL,3);
+        addLV(ws2,r++,'Respaldo de Baterías Requerido (horas)',(data.horasRespaldo&&parseFloat(data.horasRespaldo)>0)?(data.horasRespaldo+' h'):'Sin baterías',ORANGECL,3);
+        if (data.numBaterias) addLV(ws2,r++,'Número de Baterías Requeridas (estimado)',data.numBaterias,ORANGECL,3);
         addLV(ws2,r++,'Último consumo del mes (kWh)',data.ultimoConsumoMes,ORANGECL,3);
         addLV(ws2,r++,'Consumo en los últimos 6 meses (kWh)',data.consumo6Meses,ORANGECL,3);
         blank(ws2,r++);
@@ -1560,6 +1712,9 @@
         checkRow(ws3,r++,'Estado del techo',cl['techo-estado']);
         checkRow(ws3,r++,'Capacidad de carga del techo',cl['carga-techo']);
         checkRow(ws3,r++,'Impermeabilización',cl['impermeabilizacion']);
+        checkRow(ws3,r++,'¿Cuenta con certificación de carga?',cl['cert-carga']);
+        addLV(ws3,r++,'Fecha de certificación de carga',data.certCargaFecha,GRIS,2);
+        checkRow(ws3,r++,'¿Requiere recertificación de carga?',cl['recertificacion']);
         addLV(ws3,r++,'Tipo de Techo / Estructura',data.tipoTecho,GRIS,2);
         blank(ws3,r++);
 
@@ -1571,7 +1726,9 @@
 
         secH(ws3,r++,'⚡  INSTALACIÓN ELÉCTRICA EXISTENTE',NARANJA,2);
         checkRow(ws3,r++,'Centro de carga / Tablero principal',cl['centro-carga']);
-        checkRow(ws3,r++,'Medidor bidireccional (instalado o con capacidad)',cl['medidor']);
+        addLV(ws3,r++,'Tipo de Medidor Actual',data.tipoMedidor,ORANGECL,2);
+        checkRow(ws3,r++,'¿Requiere medidor bidireccional?',cl['requiere-bidireccional']);
+        addLV(ws3,r++,'Espacio para medidor bidireccional y baterías',espacioMBLabel(data.espacioMedidorBaterias),ORANGECL,2);
         checkRow(ws3,r++,'Cables de tierra física y neutro',cl['tierra']);
         checkRow(ws3,r++,'Protecciones en línea (fusibles, breakers)',cl['protecciones']);
         checkRow(ws3,r++,'Ruta de cableado disponible',cl['ruta-cable']);
@@ -1587,9 +1744,12 @@
 
         secH(ws3,r++,'🚗  ACCESO Y LOGÍSTICA',AZULM,2);
         checkRow(ws3,r++,'Acceso al medidor',cl['acceso-medidor']);
-        checkRow(ws3,r++,'Acceso al techo',cl['acceso-techo']);
+        checkRow(ws3,r++,'¿Hay acceso al techo?',cl['acceso-techo']);
+        addLV(ws3,r++,'Tipo de Acceso / Escalera',accesoTechoLabel(data.tipoAccesoTecho),BLUECL,2);
         checkRow(ws3,r++,'Acceso vehicular para materiales',cl['acceso-vehicular']);
         checkRow(ws3,r++,'¿Requiere andamio?',cl['andamio']);
+        checkRow(ws3,r++,'¿Hay espacio para los equipos?',cl['espacio-equipos']);
+        checkRow(ws3,r++,'¿Requiere adecuación de espacio?',cl['adecuacion-espacio']);
         addLV(ws3,r++,'Tipo de Obstáculos / Dificultades',data.tipoObstaculos,BLUECL,2);
         blank(ws3,r++);
 
@@ -1688,11 +1848,19 @@
         }
         blank(ws5,r++);
 
-        secH(ws5,r++,'📐  INCLINACIÓN Y ORIENTACIÓN',CELEST,3);
-        addLV(ws5,r++,'Inclinación del Techo (°)',med.inclinacionTecho,CELESTCL,3);
-        addLV(ws5,r++,'Azimut / Orientación (°)  —  180° = Sur',med.azimut,CELESTCL,3);
-        addLV(ws5,r++,'Altura del Techo (m)',med.alturaTecho,CELESTCL,3);
-        blank(ws5,r++);
+        // Inclinación y orientación por cada área
+        if (data.areas&&data.areas.length>0) {
+            data.areas.forEach((a,idx)=>{
+                const nombre = a.descripcion || ('Área '+(idx+1));
+                secH(ws5,r++,'📐  INCLINACIÓN Y ORIENTACIÓN — '+nombre.toUpperCase(),CELEST,3);
+                addLV(ws5,r++,'Inclinación del Techo (°)',a.inclinacion,CELESTCL,3);
+                addLV(ws5,r++,'Orientación (punto cardinal)',a.orientacionCardinal,CELESTCL,3);
+                addLV(ws5,r++,'Azimut / Orientación (°)  —  180° = Sur',a.azimut,CELESTCL,3);
+                addLV(ws5,r++,'Altura del Techo (m)',a.altura,CELESTCL,3);
+                blank(ws5,r++);
+            });
+        }
+
 
         secH(ws5,r++,'☀️  IRRADIACIÓN SOLAR',NARANJA,3);
         addLV(ws5,r++,'Horas Solar Pico (HSP)',(med.horasSolarPico||'-')+' HSP/día',ORANGECL,3);
@@ -1703,8 +1871,15 @@
         addLV(ws5,r++,'Voltaje de Red (V)',med.voltajeRed,VERDECL,3);
         addLV(ws5,r++,'Interruptor Principal (A)',med.capacidadInterruptor,VERDECL,3);
         addLV(ws5,r++,'Calibre de Acometida',med.calibreAcometida,VERDECL,3);
+        addLV(ws5,r++,'Tipo de Medidor Actual',data.tipoMedidor,VERDECL,3);
+        checkRow(ws5,r++,'¿Requiere medidor bidireccional?',cl['requiere-bidireccional']);
+        addLV(ws5,r++,'Espacio para medidor bidireccional y baterías',espacioMBLabel(data.espacioMedidorBaterias),VERDECL,3);
         addLV(ws5,r++,'Distancia Tablero → Paneles (m)',data.distanciaTableroPaneles,VERDECL,3);
         addLV(ws5,r++,'Potencia del Transformador (kVA)',data.transformadorPotencia,VERDECL,3);
+        blank(ws5,r++);
+        checkRow(ws5,r++,'¿Hay espacio para los equipos?',cl['espacio-equipos']);
+        checkRow(ws5,r++,'¿Requiere adecuación de espacio?',cl['adecuacion-espacio']);
+        addLV(ws5,r++,'Tipo de Acceso al Techo',accesoTechoLabel(data.tipoAccesoTecho),VERDECL,3);
         blank(ws5,r++);
 
         secH(ws5,r++,'🔧  EQUIPO DE MEDICIÓN',AZULM,3);
@@ -1805,7 +1980,8 @@
             {arr:data.fotosTransformador, cat:'🔌 Transformador',  desc:'Foto transformador'},
             {arr:data.fotosRecibo,        cat:'🧾 Recibo',         desc:'Foto recibo de luz'},
             {arr:data.fotosArea1,         cat:'📐 Área',           desc:'Foto del área'},
-            {arr:data.fotosEquipo,        cat:'🔧 Equipo medición',desc:'Foto equipo de medición'}
+            {arr:data.fotosEquipo,        cat:'🔧 Equipo medición',desc:'Foto equipo de medición'},
+            {arr:data.fotosEspacioEquipos,cat:'📦 Espacio equipos',desc:'Foto espacio para equipos'}
         ];
         fotoCats.forEach(({arr,cat,desc})=>{
             if (Array.isArray(arr)&&arr.length>0) arr.forEach((f,i)=>addFoto(cat,`${desc} ${i+1}`,f));
@@ -1844,10 +2020,18 @@
 
     // ========== RECOLECTAR DATOS ==========
     function recolectarDatos() {
-        const requiereBaterias = document.getElementById('requiere-baterias')?.value || '';
+        const horasRespaldo = document.getElementById('horas-respaldo')?.value || '';
         const motivoSelect = document.getElementById('motivo-select')?.value || '';
         const motivoOtro = document.getElementById('motivo-otro')?.value || '';
         const motivo = motivoSelect === 'otro' ? motivoOtro : motivoSelect;
+
+        // Resolver "Otro" en techo y obstáculos: si eligen otro/otros, usar el texto escrito
+        const techoSelect = document.getElementById('tipo-techo')?.value || '';
+        const techoOtro = document.getElementById('tipo-techo-otro')?.value || '';
+        const tipoTechoResuelto = techoSelect === 'otro' ? techoOtro : techoSelect;
+        const obstSelect = document.getElementById('tipo-obstaculos')?.value || '';
+        const obstOtro = document.getElementById('tipo-obstaculos-otro')?.value || '';
+        const tipoObstaculosResuelto = (obstSelect === 'otro' || obstSelect === 'otros') ? obstOtro : obstSelect;
 
         // Obtener datos del análisis solar
         const latEl = document.getElementById('solar-lat');
@@ -1866,10 +2050,10 @@
             gps: document.getElementById('gps-coords').value,
             responsableVisita: document.getElementById('responsable-visita').value,
             tipoCliente: document.getElementById('tipo-cliente').value,
-            tarifaCFE: document.getElementById('tarifa-cfe').value,
+            clima: document.getElementById('tipo-clima')?.value || '',
             kilovatiosContratados: document.getElementById('kilovatios-contratados').value,
-            requiereBaterias,
-            numBaterias: requiereBaterias === 'si' ? (document.getElementById('num-baterias')?.value || '') : '',
+            horasRespaldo,
+            numBaterias: document.getElementById('num-baterias')?.value || '',
             ultimoConsumoMes: document.getElementById('consumo-bimestral').value,
             consumo6Meses: document.getElementById('pago-bimestral').value,
             motivo,
@@ -1901,8 +2085,15 @@
 
             // Checklist
             checklist: {},
-            tipoTecho: document.getElementById('tipo-techo').value,
-            tipoObstaculos: document.getElementById('tipo-obstaculos')?.value || '',
+            tipoTecho: tipoTechoResuelto,
+            tipoObstaculos: tipoObstaculosResuelto,
+            certCargaFecha: document.getElementById('cert-carga-fecha')?.value || '',
+            tipoMedidor: document.getElementById('tipo-medidor')?.value || '',
+            espacioMedidorBaterias: document.getElementById('espacio-medidor-baterias')?.value || '',
+            tipoAccesoTecho: (function(){
+                const sel = document.getElementById('tipo-acceso-techo')?.value || '';
+                return sel === 'otro' ? (document.getElementById('tipo-acceso-techo-otro')?.value || 'Otro') : sel;
+            })(),
             observacionesChecklist: document.getElementById('observaciones-checklist').value,
             distanciaTableroPaneles: document.getElementById('distancia-tablero-paneles')?.value || '',
             transformadorPotencia: document.getElementById('transformador-potencia')?.value || '',
@@ -1910,16 +2101,22 @@
             numeroServicio: document.getElementById('numero-servicio')?.value || '',
             // Mediciones
             mediciones: {
-                inclinacionTecho: document.getElementById('inclinacion-techo').value,
-                azimut: document.getElementById('azimut').value,
-                alturaTecho: document.getElementById('altura-techo').value,
+                inclinacionTecho: '',   // se toma del Área 1 más abajo (ahora es por área)
+                azimut: '',             // idem
+                orientacionCardinal: '',// idem
+                alturaTecho: '',        // idem
                 horasSolarPico: document.getElementById('horas-solar-pico').value,
                 irradiancia: document.getElementById('irradiancia').value,
                 voltajeRed: document.getElementById('voltaje-red').value,
                 capacidadInterruptor: document.getElementById('capacidad-interruptor').value,
                 calibreAcometida: document.getElementById('calibre-acometida').value
             },
-            equipoMedicion: document.getElementById('equipo-medicion').value,
+            equipoMedicion: (function(){
+                const sel = Array.from(document.querySelectorAll('input[name="equipo-med"]:checked')).map(c => c.value);
+                const otro = (document.getElementById('equipo-medicion-otro')?.value || '').trim();
+                if (otro) sel.push(otro);
+                return sel.join(', ');
+            })(),
             observacionesMediciones: document.getElementById('observaciones-mediciones').value,
             // Fotos
             fotos: photos.slice(),
@@ -1929,6 +2126,7 @@
             fotosRecibo: reciboPhotos.slice(),
             fotosArea1: area1Photos.slice(),
             fotosEquipo: equipoPhotos.slice(),
+            fotosEspacioEquipos: espacioEquiposPhotos.slice(),
             observacionesFotos: document.getElementById('observaciones-fotos').value,
             // Brújula solar (imagen del canvas)
             brujulaSolarImg: (() => {
@@ -1967,7 +2165,11 @@
                     descripcion: desc,
                     largo,
                     ancho,
-                    areaUtil: util
+                    areaUtil: util,
+                    inclinacion: document.getElementById(`area-${index}-inclinacion`)?.value || '',
+                    orientacionCardinal: document.getElementById(`area-${index}-orientacion`)?.value || '',
+                    azimut: document.getElementById(`area-${index}-azimut`)?.value || '',
+                    altura: document.getElementById(`area-${index}-altura`)?.value || ''
                 });
             });
         }
@@ -1977,6 +2179,11 @@
         data.mediciones.areaLargo = area1.largo || '';
         data.mediciones.areaAncho = area1.ancho || '';
         data.mediciones.areaUtil = area1.areaUtil || '';
+        // Inclinación/orientación ahora son por área → reflejar Área 1 en mediciones (compat)
+        data.mediciones.inclinacionTecho = area1.inclinacion || '';
+        data.mediciones.azimut = area1.azimut || '';
+        data.mediciones.orientacionCardinal = area1.orientacionCardinal || '';
+        data.mediciones.alturaTecho = area1.altura || '';
 
         // Cálculo de Potencial Solar (mismo que el visualizador en vivo)
         data.potencialSolar = (function() {
@@ -2172,10 +2379,10 @@
             addLV(ws,r++,'Consumo 6 Meses (kWh)',v.consumo6Meses||v.pagoBimestral,CELESTCL,3);
             addLV(ws,r++,'Proveedor de Energía',v.proveedorEnergia,CELESTCL,3);
             addLV(ws,r++,'Número de Servicio',v.numeroServicio,CELESTCL,3);
-            addLV(ws,r++,'Tarifa CFE',v.tarifaCFE,CELESTCL,3);
+            addLV(ws,r++,'Tipo de Clima / Piso Térmico',climaLabel(v.clima),CELESTCL,3);
             addLV(ws,r++,'kW Contratados',v.kilovatiosContratados,CELESTCL,3);
-            addLV(ws,r++,'Requiere Baterías',v.requiereBaterias==='si'?'Sí':v.requiereBaterias==='no'?'No':'-',CELESTCL,3);
-            if (v.requiereBaterias==='si') addLV(ws,r++,'Cantidad de Baterías',v.numBaterias,CELESTCL,3);
+            addLV(ws,r++,'Respaldo de Baterías (horas)',(v.horasRespaldo&&parseFloat(v.horasRespaldo)>0)?(v.horasRespaldo+' h'):'Sin baterías',CELESTCL,3);
+            if (v.numBaterias) addLV(ws,r++,'Cantidad de Baterías',v.numBaterias,CELESTCL,3);
             blank(ws,r++);
 
             // GPS + Google Maps
@@ -2464,7 +2671,7 @@
         ws.addRow(['Fecha', v.fecha]);
         ws.addRow(['Cliente', v.cliente]);
         ws.addRow(['Dirección', v.direccion]);
-        ws.addRow(['Tarifa CFE', v.tarifaCFE]);
+        ws.addRow(['Tipo de Clima / Piso Térmico', climaLabel(v.clima)]);
         ws.addRow(['Consumo Bimestral', v.consumoBimestral + ' kWh']);
         ws.addRow(['Pago Bimestral', '$' + v.pagoBimestral]);
         ws.addRow(['Tipo de Techo', v.tipoTecho]);
@@ -2520,6 +2727,28 @@
         }
     }
 
+    // Restaura un <select> con opción "Otro": si el valor guardado es uno conocido,
+    // selecciona esa opción; si no, selecciona "otro" y rellena el campo de texto.
+    function restoreSelectOrOtro(selectId, otroInputId, otroGroupId, knownValues, otroValue, saved) {
+        const sel = document.getElementById(selectId);
+        const inp = document.getElementById(otroInputId);
+        const grp = document.getElementById(otroGroupId);
+        const val = saved || '';
+        if (!sel) return;
+        if (knownValues.indexOf(val) !== -1) {
+            sel.value = val;
+            if (inp) inp.value = '';
+            if (grp) grp.style.display = 'none';
+        } else if (val) {
+            sel.value = otroValue;
+            if (inp) inp.value = val;
+            if (grp) grp.style.display = '';
+        } else {
+            sel.value = '';
+            if (grp) grp.style.display = 'none';
+        }
+    }
+
     window.appCargarVisita = function (id) {
         const visitas = JSON.parse(localStorage.getItem('visitas_solar') || '[]');
         const v = visitas.find(x => x.id === id);
@@ -2537,20 +2766,17 @@
         setVal('gps-coords', v.gps);
         setVal('responsable-visita', v.responsableVisita);
         setVal('tipo-cliente', v.tipoCliente);
-        setVal('tarifa-cfe', v.tarifaCFE);
+        setVal('tipo-clima', v.clima);
         setVal('kilovatios-contratados', v.kilovatiosContratados);
         setVal('consumo-bimestral', v.ultimoConsumoMes);
         setVal('pago-bimestral', v.consumo6Meses);
 
-        // Yes/no baterías + cantidad
-        const reqBat = v.requiereBaterias || '';
-        setVal('requiere-baterias', reqBat);
-        const btnSi = document.getElementById('btn-baterias-si');
-        const btnNo = document.getElementById('btn-baterias-no');
-        if (btnSi) btnSi.classList.toggle('active', reqBat === 'si');
-        if (btnNo) btnNo.classList.toggle('active', reqBat === 'no');
-        const numGroup = document.getElementById('num-baterias-group');
-        if (numGroup) numGroup.style.display = reqBat === 'si' ? '' : 'none';
+        // Horas de respaldo de baterías + cantidad
+        // Compat: visitas viejas tenían requiereBaterias 'si'/'no' sin horas
+        const horasResp = (v.horasRespaldo !== undefined && v.horasRespaldo !== '')
+            ? v.horasRespaldo
+            : (v.requiereBaterias === 'si' ? '' : '0');
+        setVal('horas-respaldo', horasResp);
         setVal('num-baterias', v.numBaterias);
 
         // Motivo (con detección de "otro")
@@ -2572,16 +2798,25 @@
         const med = v.mediciones || {};
         setVal('horas-solar-pico', med.horasSolarPico);
         setVal('irradiancia', med.irradiancia);
-        setVal('inclinacion-techo', med.inclinacionTecho);
-        setVal('azimut', med.azimut);
-        setVal('altura-techo', med.alturaTecho);
+        // Inclinación/orientación ahora son por área (se restauran en el bloque de áreas)
         setVal('voltaje-red', med.voltajeRed);
         setVal('capacidad-interruptor', med.capacidadInterruptor);
         setVal('calibre-acometida', med.calibreAcometida);
+        setVal('tipo-medidor', v.tipoMedidor);
+        setVal('cert-carga-fecha', v.certCargaFecha);
+        setVal('espacio-medidor-baterias', v.espacioMedidorBaterias);
+        // Tipo de acceso al techo (con manejo de "Otro")
+        restoreSelectOrOtro('tipo-acceso-techo', 'tipo-acceso-techo-otro', 'tipo-acceso-techo-otro-group',
+            ['escalera-extension','escalera-tijera','escalera-marina','escaleras-internas','acceso-directo','rampa','requiere-andamio','sin-acceso'],
+            'otro', v.tipoAccesoTecho);
 
         // === Evaluación técnica ===
-        setVal('tipo-techo', v.tipoTecho);
-        setVal('tipo-obstaculos', v.tipoObstaculos);
+        restoreSelectOrOtro('tipo-techo', 'tipo-techo-otro', 'tipo-techo-otro-group',
+            ['losa-concreto','lamina-metal','lamina-galvanizada','teja-zinc','teja-barro','domos','piso-tierra'],
+            'otro', v.tipoTecho);
+        restoreSelectOrOtro('tipo-obstaculos', 'tipo-obstaculos-otro', 'tipo-obstaculos-otro-group',
+            ['edificacion-vecina','vegetacion','sombra-propia','sombra-vecinos','sin-obstaculos'],
+            'otros', v.tipoObstaculos);
         setVal('observaciones-checklist', v.observacionesChecklist);
         setVal('distancia-tablero-paneles', v.distanciaTableroPaneles);
         setVal('transformador-potencia', v.transformadorPotencia);
@@ -2609,6 +2844,10 @@
             setVal('area-1-largo', a1.largo);
             setVal('area-1-ancho', a1.ancho);
             setVal('area-1-util', a1.areaUtil);
+            setVal('area-1-inclinacion', a1.inclinacion);
+            setVal('area-1-orientacion', a1.orientacionCardinal);
+            setVal('area-1-azimut', a1.azimut);
+            setVal('area-1-altura', a1.altura);
             // Agregar áreas adicionales
             const btnAdd = document.getElementById('btn-add-area');
             for (let i = 1; i < v.areas.length; i++) {
@@ -2619,11 +2858,27 @@
                 setVal('area-' + idx + '-largo', a.largo);
                 setVal('area-' + idx + '-ancho', a.ancho);
                 setVal('area-' + idx + '-util', a.areaUtil);
+                setVal('area-' + idx + '-inclinacion', a.inclinacion);
+                setVal('area-' + idx + '-orientacion', a.orientacionCardinal);
+                setVal('area-' + idx + '-azimut', a.azimut);
+                setVal('area-' + idx + '-altura', a.altura);
             }
         }
 
         // === Equipo de medición + observaciones ===
-        setVal('equipo-medicion', v.equipoMedicion);
+        // Equipo de medición (multi-select): re-marcar checkboxes según el string guardado
+        (function(){
+            const guardados = (v.equipoMedicion || '').split(',').map(s => s.trim()).filter(Boolean);
+            const checks = document.querySelectorAll('input[name="equipo-med"]');
+            const conocidos = [];
+            checks.forEach(c => {
+                c.checked = guardados.indexOf(c.value) !== -1;
+                if (c.checked) conocidos.push(c.value);
+            });
+            // Lo que no coincide con un checkbox va al campo "Otro"
+            const otros = guardados.filter(g => conocidos.indexOf(g) === -1);
+            setVal('equipo-medicion-otro', otros.join(', '));
+        })();
         setVal('observaciones-mediciones', v.observacionesMediciones);
         setVal('observaciones-fotos', v.observacionesFotos);
 
@@ -2640,6 +2895,7 @@
         reciboPhotos        = Array.isArray(v.fotosRecibo)        ? v.fotosRecibo.slice()        : [];
         area1Photos         = Array.isArray(v.fotosArea1)         ? v.fotosArea1.slice()         : [];
         equipoPhotos        = Array.isArray(v.fotosEquipo)        ? v.fotosEquipo.slice()        : [];
+        espacioEquiposPhotos = Array.isArray(v.fotosEspacioEquipos) ? v.fotosEspacioEquipos.slice() : [];
         if (typeof renderPhotos === 'function')              renderPhotos();
         if (typeof renderTechoPhotos === 'function')         renderTechoPhotos();
         if (typeof renderTableroPhotos === 'function')       renderTableroPhotos();
@@ -2647,6 +2903,8 @@
         if (typeof renderReciboPhotos === 'function')        renderReciboPhotos();
         if (typeof renderArea1Photos === 'function')         renderArea1Photos();
         if (typeof renderEquipoPhotos === 'function')        renderEquipoPhotos();
+        if (typeof renderEspacioEquiposPhotos === 'function') renderEspacioEquiposPhotos();
+        if (typeof initCondicionales === 'function')         initCondicionales();
 
         // === Banner + navegar a Nueva Visita ===
         actualizarBannerEdicion();

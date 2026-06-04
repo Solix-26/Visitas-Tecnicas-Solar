@@ -61,6 +61,9 @@
 
     <!-- ========== LOGIN SCREEN ========== -->
     <div id="login-screen" class="login-screen" style="display:none;">
+        <button id="btn-theme-toggle-login" class="btn-theme-toggle js-theme-toggle theme-toggle-login" type="button" aria-label="Cambiar modo de color">
+            <span class="theme-toggle-icon" aria-hidden="true">☀️</span>
+        </button>
         <div class="login-container">
             <div class="login-logos-duo">
                 <img src="icons/logo-ecowatt.png" alt="Ecowatt E.S.P" class="login-logo-duo login-logo-duo-left">
@@ -92,7 +95,7 @@
 
     <!-- ========== HEADER ========== -->
     <header class="app-header" id="app-header" style="display:none;">
-        <button id="btn-theme-toggle" class="btn-theme-toggle" type="button" aria-label="Cambiar modo de color">
+        <button id="btn-theme-toggle" class="btn-theme-toggle js-theme-toggle" type="button" aria-label="Cambiar modo de color">
             <span class="theme-toggle-icon" aria-hidden="true">☀️</span>
         </button>
         <div class="header-content">
@@ -221,21 +224,58 @@
                             <option value="agroindustrial">🌾 Agroindustrial</option>
                         </select>
                     </div>
+                    <div class="form-group">
+                        <label for="tipo-clima">Tipo de Clima / Piso Térmico</label>
+                        <div class="tile-grid" role="group" aria-labelledby="tipo-clima-label">
+                            <button type="button" class="tile-pick" data-target="tipo-clima" data-value="calido">
+                                <span class="tile-check" aria-hidden="true">✓</span>
+                                <span class="tile-icon">☀️</span>
+                                <span class="tile-label">Cálido</span>
+                                <span class="tile-sub">0–1000 m · &gt;24°C</span>
+                            </button>
+                            <button type="button" class="tile-pick" data-target="tipo-clima" data-value="templado">
+                                <span class="tile-check" aria-hidden="true">✓</span>
+                                <span class="tile-icon">⛅</span>
+                                <span class="tile-label">Templado</span>
+                                <span class="tile-sub">1000–2000 m · 17–24°C</span>
+                            </button>
+                            <button type="button" class="tile-pick" data-target="tipo-clima" data-value="frio">
+                                <span class="tile-check" aria-hidden="true">✓</span>
+                                <span class="tile-icon">❄️</span>
+                                <span class="tile-label">Frío</span>
+                                <span class="tile-sub">2000–3000 m · 12–17°C</span>
+                            </button>
+                            <button type="button" class="tile-pick" data-target="tipo-clima" data-value="paramo">
+                                <span class="tile-check" aria-hidden="true">✓</span>
+                                <span class="tile-icon">🏔️</span>
+                                <span class="tile-label">Páramo</span>
+                                <span class="tile-sub">&gt;3000 m · &lt;12°C</span>
+                            </button>
+                        </div>
+                        <select id="tipo-clima" class="tile-grid-hidden-select" aria-hidden="true" tabindex="-1">
+                            <option value="">Seleccionar...</option>
+                            <option value="calido">☀️ Cálido</option>
+                            <option value="templado">⛅ Templado</option>
+                            <option value="frio">❄️ Frío</option>
+                            <option value="paramo">🏔️ Páramo</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Tarjeta 3: Ubicación -->
                 <div class="checklist-category card-sky">
                     <h3>📍 Ubicación</h3>
                     <div class="form-group">
-                        <label for="direccion">Dirección de Instalación</label>
-                        <input type="text" id="direccion" placeholder="Calle, número, colonia, ciudad">
-                    </div>
-                    <div class="form-group">
                         <label>📍 Ubicación GPS</label>
                         <div class="gps-container">
                             <input type="text" id="gps-coords" readonly placeholder="Presiona obtener ubicación">
                             <button type="button" id="btn-gps" class="btn btn-secondary">📍 Obtener</button>
                         </div>
+                        <p class="hint" style="margin-bottom:0;">Al obtener la ubicación, la dirección se llena automáticamente.</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="direccion">Dirección de Instalación</label>
+                        <input type="text" id="direccion" placeholder="Se autocompleta con el GPS — o escríbela a mano">
                     </div>
                 </div>
 
@@ -243,38 +283,17 @@
                 <div class="checklist-category card-accent">
                     <h3>⚡ Consumo Energético</h3>
                     <div class="form-group">
-                        <label for="tarifa-cfe">Tarifa CFE</label>
-                        <select id="tarifa-cfe">
-                            <option value="">Seleccionar...</option>
-                            <option value="1">1 - Doméstica</option>
-                            <option value="1A">1A - Doméstica (cálido)</option>
-                            <option value="1B">1B - Doméstica (templado)</option>
-                            <option value="1C">1C - Doméstica (cálido extremo)</option>
-                            <option value="1D">1D - Doméstica (cálido tropical)</option>
-                            <option value="1E">1E - Doméstica (cálido extremo tropical)</option>
-                            <option value="1F">1F - Doméstica (cálido muy extremo)</option>
-                            <option value="DAC">DAC - Doméstico de Alto Consumo</option>
-                            <option value="PDBT">PDBT - Pequeña Demanda Baja Tensión</option>
-                            <option value="GDBT">GDBT - Gran Demanda Baja Tensión</option>
-                            <option value="GDMT">GDMT - Gran Demanda Media Tensión</option>
-                            <option value="RAMT">RAMT - Riego Agrícola Media Tensión</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
                         <label for="kilovatios-contratados">Kilovatios contratados (kW)</label>
                         <input type="number" id="kilovatios-contratados" placeholder="Ej: 10" min="0" step="0.01">
                         <small>Introduce los kilovatios contratados (kW)</small>
                     </div>
                     <div class="form-group">
-                        <label>¿Requiere baterías?</label>
-                        <div class="yes-no-buttons">
-                            <button type="button" class="btn-yesno" id="btn-baterias-si">Sí</button>
-                            <button type="button" class="btn-yesno" id="btn-baterias-no">No</button>
-                        </div>
-                        <input type="hidden" id="requiere-baterias" value="">
+                        <label for="horas-respaldo">Respaldo de baterías requerido (horas)</label>
+                        <input type="number" id="horas-respaldo" min="0" step="1" placeholder="Ej: 8 (0 = sin baterías)">
+                        <p class="hint" style="margin-bottom:0;">Cuántas horas de autonomía con baterías necesita el cliente. Deja 0 si no requiere.</p>
                     </div>
-                    <div class="form-group" id="num-baterias-group" style="display:none;">
-                        <label>Número de baterías</label>
+                    <div class="form-group" id="num-baterias-group">
+                        <label>Número de baterías requeridas (estimado)</label>
                         <div class="battery-selector" id="battery-selector" role="group">
                             <button type="button" class="battery-cell" data-value="1"><span class="bc-num">1</span></button>
                             <button type="button" class="battery-cell" data-value="2"><span class="bc-num">2</span></button>
@@ -386,6 +405,81 @@
                             </div>
                         </div>
                         <p class="sp-note">Cálculo aproximado basado en consumo + HSP. Sujeto a evaluación técnica final.</p>
+                    </div>
+                </div>
+
+                <!-- Tarjeta: Eléctrico Existente (movida desde Mediciones) -->
+                <div class="checklist-category card-accent">
+                    <h3>⚡ Eléctrico Existente</h3>
+                    <div class="form-group">
+                        <label for="voltaje-red">Voltaje en Red (V)</label>
+                        <input type="number" id="voltaje-red" step="0.1" placeholder="127">
+                    </div>
+                    <div class="form-group">
+                        <label for="capacidad-interruptor">Interruptor Principal (A)</label>
+                        <input type="number" id="capacidad-interruptor" step="1" placeholder="30">
+                    </div>
+                    <div class="form-group">
+                        <label for="calibre-acometida">Calibre Acometida</label>
+                        <input type="text" id="calibre-acometida" placeholder="Ej: Cal. 8 AWG">
+                    </div>
+                    <div class="form-group">
+                        <label for="tipo-medidor">Tipo de medidor actual</label>
+                        <select id="tipo-medidor">
+                            <option value="">Seleccionar...</option>
+                            <option value="estandar">Estándar (unidireccional)</option>
+                            <option value="bidireccional">Bidireccional</option>
+                        </select>
+                    </div>
+                    <div class="checklist-item">
+                        <span>¿Requiere medidor bidireccional?</span>
+                        <div class="check-options">
+                            <label class="check-option si"><input type="radio" name="check-requiere-bidireccional" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-requiere-bidireccional" value="no"><span>No</span></label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="espacio-medidor-baterias">¿Hay espacio para medidor bidireccional y baterías?</label>
+                        <select id="espacio-medidor-baterias">
+                            <option value="">Seleccionar...</option>
+                            <option value="ambos">Sí — espacio para medidor bidireccional y baterías</option>
+                            <option value="solo-medidor">Solo para medidor bidireccional</option>
+                            <option value="solo-baterias">Solo para baterías</option>
+                            <option value="ninguno">No hay espacio suficiente</option>
+                            <option value="requiere-adecuacion">Requiere adecuación de espacio</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tarjeta: Espacio para Equipos (movida desde Mediciones) -->
+                <div class="checklist-category card-sky">
+                    <h3>📦 Espacio para Equipos</h3>
+                    <div class="checklist-item">
+                        <span>¿Hay espacio para los equipos (inversor, protecciones, etc.)?</span>
+                        <div class="check-options">
+                            <label class="check-option si"><input type="radio" name="check-espacio-equipos" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-espacio-equipos" value="no"><span>No</span></label>
+                        </div>
+                    </div>
+                    <div class="checklist-item">
+                        <span>¿Se requiere adecuación del espacio para los equipos?</span>
+                        <div class="check-options">
+                            <label class="check-option si"><input type="radio" name="check-adecuacion-espacio" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-adecuacion-espacio" value="no"><span>No</span></label>
+                        </div>
+                    </div>
+                    <div id="espacio-equipos-foto-group" style="display:none; margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid var(--border);">
+                        <label style="display:block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary);">📸 Foto del punto donde irán los equipos</label>
+                        <p class="hint" style="margin-bottom: 0.5rem;">Captura el espacio disponible para montar inversor y tableros</p>
+                        <div style="display:flex; gap:0.6rem; margin-bottom:0.6rem;">
+                            <button type="button" id="btn-espacio-equipos-camara" class="btn btn-primary btn-small">📸 Tomar Foto</button>
+                            <button type="button" id="btn-espacio-equipos-galeria" class="btn btn-secondary btn-small">📁 Galería</button>
+                        </div>
+                        <div id="espacio-equipos-gallery" class="photo-gallery" style="min-height:80px;">
+                            <div class="photo-placeholder"><span>📦</span><p>Sin fotos del espacio</p></div>
+                        </div>
+                        <input type="file" id="espacio-equipos-camera-input" aria-label="Cámara espacio equipos" accept="image/*" capture="environment" style="display:none">
+                        <input type="file" id="espacio-equipos-gallery-input" aria-label="Galería espacio equipos" accept="image/*" multiple style="display:none">
                     </div>
                 </div>
 
@@ -520,28 +614,40 @@
                     <div class="checklist-item">
                         <span>Estado general del techo</span>
                         <div class="check-options">
-                            <label class="check-option bien"><input type="radio" name="check-techo-estado" value="bien"><span>✓</span></label>
-                            <label class="check-option regular"><input type="radio" name="check-techo-estado" value="regular"><span>~</span></label>
-                            <label class="check-option mal"><input type="radio" name="check-techo-estado" value="mal"><span>✗</span></label>
-                            <label class="check-option na"><input type="radio" name="check-techo-estado" value="na"><span>N/A</span></label>
+                            <label class="check-option si"><input type="radio" name="check-techo-estado" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-techo-estado" value="no"><span>No</span></label>
                         </div>
                     </div>
                     <div class="checklist-item">
                         <span>Capacidad de carga del techo</span>
                         <div class="check-options">
-                            <label class="check-option bien"><input type="radio" name="check-carga-techo" value="bien"><span>✓</span></label>
-                            <label class="check-option regular"><input type="radio" name="check-carga-techo" value="regular"><span>~</span></label>
-                            <label class="check-option mal"><input type="radio" name="check-carga-techo" value="mal"><span>✗</span></label>
-                            <label class="check-option na"><input type="radio" name="check-carga-techo" value="na"><span>N/A</span></label>
+                            <label class="check-option si"><input type="radio" name="check-carga-techo" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-carga-techo" value="no"><span>No</span></label>
                         </div>
                     </div>
                     <div class="checklist-item">
                         <span>Impermeabilización</span>
                         <div class="check-options">
-                            <label class="check-option bien"><input type="radio" name="check-impermeabilizacion" value="bien"><span>✓</span></label>
-                            <label class="check-option regular"><input type="radio" name="check-impermeabilizacion" value="regular"><span>~</span></label>
-                            <label class="check-option mal"><input type="radio" name="check-impermeabilizacion" value="mal"><span>✗</span></label>
-                            <label class="check-option na"><input type="radio" name="check-impermeabilizacion" value="na"><span>N/A</span></label>
+                            <label class="check-option si"><input type="radio" name="check-impermeabilizacion" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-impermeabilizacion" value="no"><span>No</span></label>
+                        </div>
+                    </div>
+                    <div class="checklist-item">
+                        <span>¿Cuenta con certificación de carga del techo?</span>
+                        <div class="check-options">
+                            <label class="check-option si"><input type="radio" name="check-cert-carga" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-cert-carga" value="no"><span>No</span></label>
+                        </div>
+                    </div>
+                    <div class="form-group" id="cert-carga-fecha-group" style="display:none; margin-top: 0.5rem;">
+                        <label for="cert-carga-fecha">Fecha de la certificación de carga</label>
+                        <input type="date" id="cert-carga-fecha">
+                    </div>
+                    <div class="checklist-item">
+                        <span>¿Requiere recertificación de carga?</span>
+                        <div class="check-options">
+                            <label class="check-option si"><input type="radio" name="check-recertificacion" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-recertificacion" value="no"><span>No</span></label>
                         </div>
                     </div>
                     <div class="form-group" style="margin-top: 0.5rem;">
@@ -557,6 +663,10 @@
                             <option value="piso-tierra">Montaje en piso / tierra</option>
                             <option value="otro">Otro</option>
                         </select>
+                    </div>
+                    <div class="form-group" id="tipo-techo-otro-group" style="display:none;">
+                        <label for="tipo-techo-otro">Especifica el tipo de techo</label>
+                        <input type="text" id="tipo-techo-otro" placeholder="Describe el tipo de techo...">
                     </div>
 
                     <!-- Fotos del techo -->
@@ -583,28 +693,22 @@
                     <div class="checklist-item">
                         <span>Orientación hacia el sur</span>
                         <div class="check-options">
-                            <label class="check-option bien"><input type="radio" name="check-orientacion-sur" value="bien"><span>✓</span></label>
-                            <label class="check-option regular"><input type="radio" name="check-orientacion-sur" value="regular"><span>~</span></label>
-                            <label class="check-option mal"><input type="radio" name="check-orientacion-sur" value="mal"><span>✗</span></label>
-                            <label class="check-option na"><input type="radio" name="check-orientacion-sur" value="na"><span>N/A</span></label>
+                            <label class="check-option si"><input type="radio" name="check-orientacion-sur" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-orientacion-sur" value="no"><span>No</span></label>
                         </div>
                     </div>
                     <div class="checklist-item">
-                        <span>Libre de sombras (árboles, edificios, tinacos)</span>
+                        <span>Libre de sombras (árboles, edificios, tanques de agua)</span>
                         <div class="check-options">
-                            <label class="check-option bien"><input type="radio" name="check-sombras" value="bien"><span>✓</span></label>
-                            <label class="check-option regular"><input type="radio" name="check-sombras" value="regular"><span>~</span></label>
-                            <label class="check-option mal"><input type="radio" name="check-sombras" value="mal"><span>✗</span></label>
-                            <label class="check-option na"><input type="radio" name="check-sombras" value="na"><span>N/A</span></label>
+                            <label class="check-option si"><input type="radio" name="check-sombras" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-sombras" value="no"><span>No</span></label>
                         </div>
                     </div>
                     <div class="checklist-item">
                         <span>Espacio disponible suficiente</span>
                         <div class="check-options">
-                            <label class="check-option bien"><input type="radio" name="check-espacio" value="bien"><span>✓</span></label>
-                            <label class="check-option regular"><input type="radio" name="check-espacio" value="regular"><span>~</span></label>
-                            <label class="check-option mal"><input type="radio" name="check-espacio" value="mal"><span>✗</span></label>
-                            <label class="check-option na"><input type="radio" name="check-espacio" value="na"><span>N/A</span></label>
+                            <label class="check-option si"><input type="radio" name="check-espacio" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-espacio" value="no"><span>No</span></label>
                         </div>
                     </div>
                 </div>
@@ -614,10 +718,8 @@
                     <div class="checklist-item">
                         <span>Centro de carga / Tablero principal</span>
                         <div class="check-options">
-                            <label class="check-option bien"><input type="radio" name="check-centro-carga" value="bien"><span>✓</span></label>
-                            <label class="check-option regular"><input type="radio" name="check-centro-carga" value="regular"><span>~</span></label>
-                            <label class="check-option mal"><input type="radio" name="check-centro-carga" value="mal"><span>✗</span></label>
-                            <label class="check-option na"><input type="radio" name="check-centro-carga" value="na"><span>N/A</span></label>
+                            <label class="check-option si"><input type="radio" name="check-centro-carga" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-centro-carga" value="no"><span>No</span></label>
                         </div>
                     </div>
                     <!-- Fotos del tablero principal -->
@@ -634,39 +736,24 @@
                         <input type="file" id="tablero-gallery-input" aria-label="Galería tablero" accept="image/*" multiple style="display:none">
                     </div>
                     <div class="checklist-item">
-                        <span>Medidor bidireccional o espacio para uno</span>
-                        <div class="check-options">
-                            <label class="check-option bien"><input type="radio" name="check-medidor" value="bien"><span>✓</span></label>
-                            <label class="check-option regular"><input type="radio" name="check-medidor" value="regular"><span>~</span></label>
-                            <label class="check-option mal"><input type="radio" name="check-medidor" value="mal"><span>✗</span></label>
-                            <label class="check-option na"><input type="radio" name="check-medidor" value="na"><span>N/A</span></label>
-                        </div>
-                    </div>
-                    <div class="checklist-item">
                         <span>Sistema de tierra física</span>
                         <div class="check-options">
-                            <label class="check-option bien"><input type="radio" name="check-tierra" value="bien"><span>✓</span></label>
-                            <label class="check-option regular"><input type="radio" name="check-tierra" value="regular"><span>~</span></label>
-                            <label class="check-option mal"><input type="radio" name="check-tierra" value="mal"><span>✗</span></label>
-                            <label class="check-option na"><input type="radio" name="check-tierra" value="na"><span>N/A</span></label>
+                            <label class="check-option si"><input type="radio" name="check-tierra" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-tierra" value="no"><span>No</span></label>
                         </div>
                     </div>
                     <div class="checklist-item">
                         <span>Protecciones eléctricas adecuadas</span>
                         <div class="check-options">
-                            <label class="check-option bien"><input type="radio" name="check-protecciones" value="bien"><span>✓</span></label>
-                            <label class="check-option regular"><input type="radio" name="check-protecciones" value="regular"><span>~</span></label>
-                            <label class="check-option mal"><input type="radio" name="check-protecciones" value="mal"><span>✗</span></label>
-                            <label class="check-option na"><input type="radio" name="check-protecciones" value="na"><span>N/A</span></label>
+                            <label class="check-option si"><input type="radio" name="check-protecciones" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-protecciones" value="no"><span>No</span></label>
                         </div>
                     </div>
                     <div class="checklist-item">
                         <span>Ruta de cableado (techo a tablero)</span>
                         <div class="check-options">
-                            <label class="check-option bien"><input type="radio" name="check-ruta-cable" value="bien"><span>✓</span></label>
-                            <label class="check-option regular"><input type="radio" name="check-ruta-cable" value="regular"><span>~</span></label>
-                            <label class="check-option mal"><input type="radio" name="check-ruta-cable" value="mal"><span>✗</span></label>
-                            <label class="check-option na"><input type="radio" name="check-ruta-cable" value="na"><span>N/A</span></label>
+                            <label class="check-option si"><input type="radio" name="check-ruta-cable" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-ruta-cable" value="no"><span>No</span></label>
                         </div>
                     </div>
                     <div class="form-group">
@@ -706,19 +793,15 @@
                     <div class="checklist-item">
                         <span>Contrato vigente con el proveedor</span>
                         <div class="check-options">
-                            <label class="check-option bien"><input type="radio" name="check-contrato-proveedor" value="bien"><span>✓</span></label>
-                            <label class="check-option regular"><input type="radio" name="check-contrato-proveedor" value="regular"><span>~</span></label>
-                            <label class="check-option mal"><input type="radio" name="check-contrato-proveedor" value="mal"><span>✗</span></label>
-                            <label class="check-option na"><input type="radio" name="check-contrato-proveedor" value="na"><span>N/A</span></label>
+                            <label class="check-option si"><input type="radio" name="check-contrato-proveedor" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-contrato-proveedor" value="no"><span>No</span></label>
                         </div>
                     </div>
                     <div class="checklist-item">
                         <span>Acceso al medidor de energía</span>
                         <div class="check-options">
-                            <label class="check-option bien"><input type="radio" name="check-acceso-medidor" value="bien"><span>✓</span></label>
-                            <label class="check-option regular"><input type="radio" name="check-acceso-medidor" value="regular"><span>~</span></label>
-                            <label class="check-option mal"><input type="radio" name="check-acceso-medidor" value="mal"><span>✗</span></label>
-                            <label class="check-option na"><input type="radio" name="check-acceso-medidor" value="na"><span>N/A</span></label>
+                            <label class="check-option si"><input type="radio" name="check-acceso-medidor" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-acceso-medidor" value="no"><span>No</span></label>
                         </div>
                     </div>
                     <div class="form-group" style="margin-top: 0.5rem;">
@@ -746,28 +829,43 @@
                 <div class="checklist-category card-accent">
                     <h3>🔧 Acceso y Logística</h3>
                     <div class="checklist-item">
-                        <span>Acceso al techo (escaleras, escalera marina)</span>
+                        <span>¿Hay acceso al techo?</span>
                         <div class="check-options">
-                            <label class="check-option bien"><input type="radio" name="check-acceso-techo" value="bien"><span>✓</span></label>
-                            <label class="check-option regular"><input type="radio" name="check-acceso-techo" value="regular"><span>~</span></label>
-                            <label class="check-option mal"><input type="radio" name="check-acceso-techo" value="mal"><span>✗</span></label>
-                            <label class="check-option na"><input type="radio" name="check-acceso-techo" value="na"><span>N/A</span></label>
+                            <label class="check-option si"><input type="radio" name="check-acceso-techo" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-acceso-techo" value="no"><span>No</span></label>
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="tipo-acceso-techo">Tipo de acceso / escalera disponible</label>
+                        <select id="tipo-acceso-techo">
+                            <option value="">Seleccionar...</option>
+                            <option value="escalera-extension">Escalera de extensión</option>
+                            <option value="escalera-tijera">Escalera de tijera</option>
+                            <option value="escalera-marina">Escalera marina / fija a la pared</option>
+                            <option value="escaleras-internas">Escaleras internas del inmueble</option>
+                            <option value="acceso-directo">Acceso directo (terraza / azotea transitable)</option>
+                            <option value="rampa">Rampa</option>
+                            <option value="requiere-andamio">Requiere andamio / elevador</option>
+                            <option value="sin-acceso">Sin acceso seguro</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="tipo-acceso-techo-otro-group" style="display:none;">
+                        <label for="tipo-acceso-techo-otro">Especifica el tipo de acceso</label>
+                        <input type="text" id="tipo-acceso-techo-otro" placeholder="Describe el acceso disponible...">
                     </div>
                     <div class="checklist-item">
                         <span>Acceso vehicular para equipo/materiales</span>
                         <div class="check-options">
-                            <label class="check-option bien"><input type="radio" name="check-acceso-vehicular" value="bien"><span>✓</span></label>
-                            <label class="check-option regular"><input type="radio" name="check-acceso-vehicular" value="regular"><span>~</span></label>
-                            <label class="check-option mal"><input type="radio" name="check-acceso-vehicular" value="mal"><span>✗</span></label>
-                            <label class="check-option na"><input type="radio" name="check-acceso-vehicular" value="na"><span>N/A</span></label>
+                            <label class="check-option si"><input type="radio" name="check-acceso-vehicular" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-acceso-vehicular" value="no"><span>No</span></label>
                         </div>
                     </div>
                     <div class="checklist-item">
                         <span>¿Se requiere andamio?</span>
                         <div class="check-options">
-                            <label class="check-option bien"><input type="radio" name="check-andamio" value="si"><span>Sí</span></label>
-                            <label class="check-option na"><input type="radio" name="check-andamio" value="no"><span>No</span></label>
+                            <label class="check-option si"><input type="radio" name="check-andamio" value="si"><span>Sí</span></label>
+                            <label class="check-option no"><input type="radio" name="check-andamio" value="no"><span>No</span></label>
                         </div>
                     </div>
                     <div class="form-group">
@@ -782,11 +880,15 @@
                         <option value="">Seleccionar...</option>
                         <option value="edificacion-vecina">Edificación vecina</option>
                         <option value="vegetacion">Vegetación / árboles</option>
-                        <option value="sombra-propia">Sombra propia (antena, tinaco, etc.)</option>
+                        <option value="sombra-propia">Sombra propia (antena, tanque de agua, etc.)</option>
                         <option value="sombra-vecinos">Sombra de vecinos</option>
                         <option value="sin-obstaculos">Sin obstáculos</option>
                         <option value="otros">Otros</option>
                     </select>
+                </div>
+                <div class="form-group" id="tipo-obstaculos-otro-group" style="display:none;">
+                    <label for="tipo-obstaculos-otro">Especifica el tipo de obstáculo</label>
+                    <input type="text" id="tipo-obstaculos-otro" placeholder="Describe el obstáculo o sombra...">
                 </div>
                 <div class="form-group">
                     <label for="observaciones-checklist">Descripción de obstáculos / Observaciones</label>
@@ -827,6 +929,35 @@
                                     <label for="area-1-util">Área útil disponible (m²)</label>
                                     <input type="number" id="area-1-util" step="0.1" placeholder="80.0">
                                 </div>
+                                <div class="area-orientacion-box">
+                                    <span class="area-orientacion-title">📐 Inclinación y Orientación de esta área</span>
+                                    <div class="form-group">
+                                        <label for="area-1-inclinacion">Inclinación del techo (°)</label>
+                                        <input type="number" id="area-1-inclinacion" step="0.5" placeholder="15">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="area-1-orientacion">Orientación (punto cardinal)</label>
+                                        <select id="area-1-orientacion">
+                                            <option value="">Seleccionar...</option>
+                                            <option value="N">N — Norte</option>
+                                            <option value="NE">NE — Nororiente</option>
+                                            <option value="E">E — Oriente</option>
+                                            <option value="SE">SE — Suroriente</option>
+                                            <option value="S">S — Sur (óptimo)</option>
+                                            <option value="SO">SO — Suroccidente</option>
+                                            <option value="O">O — Occidente</option>
+                                            <option value="NO">NO — Noroccidente</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="area-1-azimut">Azimut / Orientación (°)</label>
+                                        <input type="number" id="area-1-azimut" step="1" placeholder="180 = Sur">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="area-1-altura">Altura del techo (m)</label>
+                                        <input type="number" id="area-1-altura" step="0.1" placeholder="3.5">
+                                    </div>
+                                </div>
                                 <div class="form-group">
                                     <label>📸 Fotos del área</label>
                                     <div style="display: flex; gap: 0.6rem; margin-bottom: 0.8rem;">
@@ -849,44 +980,29 @@
                         <button type="button" id="btn-add-area" class="btn btn-secondary btn-small">➕ Agregar otra área</button>
                     </div>
 
-                    <div class="medicion-card card-accent">
-                        <h4>📐 Inclinación y Orientación</h4>
-                        <div class="form-group">
-                            <label for="inclinacion-techo">Inclinación del techo (°)</label>
-                            <input type="number" id="inclinacion-techo" step="0.5" placeholder="15">
-                        </div>
-                        <div class="form-group">
-                            <label for="azimut">Azimut / Orientación (°)</label>
-                            <input type="number" id="azimut" step="1" placeholder="180 = Sur">
-                        </div>
-                        <div class="form-group">
-                            <label for="altura-techo">Altura del techo (m)</label>
-                            <input type="number" id="altura-techo" step="0.1" placeholder="3.5">
-                        </div>
-                    </div>
-
-                    <div class="medicion-card card-accent">
-                        <h4>⚡ Eléctrico Existente</h4>
-                        <div class="form-group">
-                            <label for="voltaje-red">Voltaje en Red (V)</label>
-                            <input type="number" id="voltaje-red" step="0.1" placeholder="127">
-                        </div>
-                        <div class="form-group">
-                            <label for="capacidad-interruptor">Interruptor Principal (A)</label>
-                            <input type="number" id="capacidad-interruptor" step="1" placeholder="30">
-                        </div>
-                        <div class="form-group">
-                            <label for="calibre-acometida">Calibre Acometida</label>
-                            <input type="text" id="calibre-acometida" placeholder="Ej: Cal. 8 AWG">
-                        </div>
-                    </div>
 
 
                 </div>
 
                 <div class="form-group" style="margin-top: 1rem;">
-                    <label for="equipo-medicion">Equipo de Medición Utilizado <span style="color:#e53935;">*</span></label>
-                    <input type="text" id="equipo-medicion" placeholder="Ej: Solarímetro, Multímetro, App Brújula, Cinta métrica..." required>
+                    <label>Equipo de Medición Utilizado (certificado) <span style="color:#e53935;">*</span></label>
+                    <p class="hint" style="margin-bottom:0.6rem;">Marca todos los instrumentos certificados usados en la visita.</p>
+                    <div class="equipos-grid">
+                        <label class="equipo-chk"><input type="checkbox" name="equipo-med" value="Solarímetro"><span>☀️ Solarímetro</span></label>
+                        <label class="equipo-chk"><input type="checkbox" name="equipo-med" value="Multímetro"><span>🔌 Multímetro</span></label>
+                        <label class="equipo-chk"><input type="checkbox" name="equipo-med" value="Pinza amperimétrica"><span>🔋 Pinza amperimétrica</span></label>
+                        <label class="equipo-chk"><input type="checkbox" name="equipo-med" value="Medidor láser de distancia"><span>📏 Medidor láser</span></label>
+                        <label class="equipo-chk"><input type="checkbox" name="equipo-med" value="Cinta métrica"><span>📐 Cinta métrica</span></label>
+                        <label class="equipo-chk"><input type="checkbox" name="equipo-med" value="Brújula / App brújula"><span>🧭 Brújula / App</span></label>
+                        <label class="equipo-chk"><input type="checkbox" name="equipo-med" value="Inclinómetro"><span>📐 Inclinómetro</span></label>
+                        <label class="equipo-chk"><input type="checkbox" name="equipo-med" value="Telurómetro (medidor de tierra)"><span>🌍 Telurómetro</span></label>
+                        <label class="equipo-chk"><input type="checkbox" name="equipo-med" value="Megóhmetro"><span>⚡ Megóhmetro</span></label>
+                        <label class="equipo-chk"><input type="checkbox" name="equipo-med" value="Cámara termográfica"><span>🌡️ Cámara termográfica</span></label>
+                    </div>
+                    <div class="form-group" style="margin-top:0.6rem;">
+                        <label for="equipo-medicion-otro">Otro equipo (opcional)</label>
+                        <input type="text" id="equipo-medicion-otro" placeholder="Otro instrumento certificado...">
+                    </div>
                     <div style="display:flex; gap:0.6rem; margin-top:0.6rem; margin-bottom:0.6rem;">
                         <button type="button" id="btn-equipo-camara" class="btn btn-primary btn-small">📸 Foto del equipo</button>
                         <button type="button" id="btn-equipo-galeria" class="btn btn-secondary btn-small">📁 Galería</button>
@@ -962,6 +1078,20 @@
                 <!-- Tarjeta 3: Viabilidad -->
                 <div class="checklist-category card-sky">
                     <h3>✅ Viabilidad del Proyecto</h3>
+                    <div class="ponderado-box">
+                        <div class="ponderado-info">
+                            <span class="ponderado-eyebrow">CÁLCULO AUTOMÁTICO PONDERADO</span>
+                            <span class="ponderado-desc">Evalúa todos los factores técnicos y sugiere la viabilidad.</span>
+                        </div>
+                        <button type="button" id="btn-calcular-viabilidad" class="btn btn-primary">🧮 Calcular viabilidad</button>
+                    </div>
+                    <div id="ponderado-resultado" class="ponderado-resultado" style="display:none;">
+                        <span class="pr-score" id="pr-score">0%</span>
+                        <div class="pr-detail">
+                            <span class="pr-nivel" id="pr-nivel">—</span>
+                            <span class="pr-hint">Puedes ajustar el nivel manualmente abajo si no estás de acuerdo.</span>
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label>Viabilidad del Proyecto</label>
                         <div class="viab-gauge" id="viab-gauge" data-value="">
@@ -1238,6 +1368,72 @@
         });
         setInterval(sync, 600);
         sync();
+
+        // ===== Cálculo ponderado automático de viabilidad =====
+        // Pesos sugeridos (ajustables cuando el cliente dé los suyos):
+        var PESOS = {
+            orientacion: 25,  // orientación sur + libre de sombras
+            techo:       20,  // estado, capacidad de carga, impermeabilización
+            espacio:     15,  // espacio disponible + área útil
+            electrico:   15,  // centro de carga, tierra, protecciones
+            acceso:      10,  // acceso techo, vehicular, ruta de cable
+            estructura:  10,  // certificación de carga / no requiere recertificación
+            equipos:      5   // espacio equipos + espacio medidor/baterías
+        };
+        function radioSi(name) {
+            var el = document.querySelector('input[name="' + name + '"]:checked');
+            return el ? (el.value === 'si' ? 1 : 0) : null; // null = sin responder
+        }
+        function promedio(vals) {
+            var r = vals.filter(function(v){ return v !== null; });
+            if (!r.length) return 0;
+            return r.reduce(function(a,b){ return a+b; }, 0) / r.length;
+        }
+        function calcular() {
+            // Orientación: orientación sur + libre de sombras + (bonus por área Sur/SE/SO)
+            var orientArea = 0.5;
+            var ac = document.getElementById('area-1-orientacion');
+            if (ac && ac.value) {
+                orientArea = (['S','SE','SO'].indexOf(ac.value) !== -1) ? 1 : (['E','O'].indexOf(ac.value) !== -1 ? 0.5 : 0.2);
+            }
+            var cat = {
+                orientacion: promedio([radioSi('check-orientacion-sur'), radioSi('check-sombras'), orientArea]),
+                techo:       promedio([radioSi('check-techo-estado'), radioSi('check-carga-techo'), radioSi('check-impermeabilizacion')]),
+                espacio:     promedio([radioSi('check-espacio'), radioSi('check-espacio-equipos')]),
+                electrico:   promedio([radioSi('check-centro-carga'), radioSi('check-tierra'), radioSi('check-protecciones')]),
+                acceso:      promedio([radioSi('check-acceso-techo'), radioSi('check-acceso-vehicular'), radioSi('check-ruta-cable')]),
+                estructura:  promedio([radioSi('check-cert-carga'), (radioSi('check-recertificacion') === null ? null : (1 - radioSi('check-recertificacion')))]),
+                equipos:     promedio([radioSi('check-requiere-bidireccional') === null ? null : 1, (function(){ var e=document.getElementById('espacio-medidor-baterias'); if(!e||!e.value) return null; return e.value==='ambos'?1:(e.value==='ninguno'?0:0.5); })()])
+            };
+            var score = 0, total = 0;
+            Object.keys(PESOS).forEach(function(k){ score += (cat[k]||0) * PESOS[k]; total += PESOS[k]; });
+            return Math.round((score / total) * 100);
+        }
+        function nivelDe(score) {
+            if (score >= 85) return 'excelente';
+            if (score >= 70) return 'bueno';
+            if (score >= 50) return 'regular';
+            if (score >= 30) return 'dificil';
+            return 'no-viable';
+        }
+        var btnCalc = document.getElementById('btn-calcular-viabilidad');
+        if (btnCalc) {
+            btnCalc.addEventListener('click', function() {
+                var score = calcular();
+                var nivel = nivelDe(score);
+                sel.value = nivel;
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+                sync();
+                var box = document.getElementById('ponderado-resultado');
+                var prScore = document.getElementById('pr-score');
+                var prNivel = document.getElementById('pr-nivel');
+                if (box) box.style.display = '';
+                if (prScore) prScore.textContent = score + '%';
+                if (prNivel) prNivel.textContent = labels[nivel] || nivel;
+                if (box) box.dataset.nivel = nivel;
+                if (window.showToast) window.showToast('🧮 Viabilidad calculada: ' + score + '% — ' + (labels[nivel]||nivel), 'success');
+            });
+        }
     })();
     </script>
 
@@ -1600,19 +1796,23 @@
     <!-- Theme toggle handler -->
     <script>
     (function() {
-        var btn = document.getElementById('btn-theme-toggle');
-        if (!btn) return;
-        var icon = btn.querySelector('.theme-toggle-icon');
+        var btns = document.querySelectorAll('.js-theme-toggle');
+        if (!btns.length) return;
         function paint(t) {
             document.documentElement.dataset.theme = t;
-            if (icon) icon.textContent = t === 'light' ? '🌙' : '☀️';
-            btn.title = t === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro';
+            btns.forEach(function(b) {
+                var icon = b.querySelector('.theme-toggle-icon');
+                if (icon) icon.textContent = t === 'light' ? '🌙' : '☀️';
+                b.title = t === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro';
+            });
         }
         paint(document.documentElement.dataset.theme || 'dark');
-        btn.addEventListener('click', function() {
-            var now = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
-            paint(now);
-            localStorage.setItem('theme', now);
+        btns.forEach(function(b) {
+            b.addEventListener('click', function() {
+                var now = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+                paint(now);
+                localStorage.setItem('theme', now);
+            });
         });
     })();
     </script>

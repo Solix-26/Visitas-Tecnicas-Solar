@@ -971,13 +971,13 @@ a:hover { color: var(--sun-warm); }
 .form-group { margin-bottom: 1rem; }
 .form-group label {
     display: block;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-transform: none;
     margin-bottom: 0.45rem;
-    color: var(--text-2);
+    color: var(--text);
 }
 .form-group input,
 .form-group select,
@@ -1220,21 +1220,20 @@ a:hover { color: var(--sun-warm); }
 .check-option input[type="radio"] { display: none; }
 .check-option span {
     display: flex; align-items: center; justify-content: center;
-    width: 36px; height: 34px;
+    min-width: 52px; height: 34px;
+    padding: 0 0.5rem;
     border-radius: 8px;
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    font-weight: 600;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 700;
     border: 1px solid var(--rule-2);
     background: rgba(8,17,31,0.4);
     color: var(--muted);
     transition: all 0.15s;
 }
 .check-option:hover span { border-color: var(--sun-warm); color: var(--sun-core); }
-.check-option.bien    input:checked ~ span { background: var(--ok-soft);     border-color: var(--ok);     color: var(--ok);     box-shadow: 0 0 0 2px rgba(52,211,153,0.15); }
-.check-option.regular input:checked ~ span { background: var(--warn-soft);   border-color: var(--warn);   color: var(--warn);   box-shadow: 0 0 0 2px rgba(251,191,36,0.15); }
-.check-option.mal     input:checked ~ span { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); box-shadow: 0 0 0 2px rgba(248,113,113,0.15); }
-.check-option.na      input:checked ~ span { background: var(--surface-2);   border-color: var(--muted);  color: var(--text-3); font-size: 0.65rem; }
+.check-option.si input:checked ~ span { background: var(--ok-soft);     border-color: var(--ok);     color: var(--ok);     box-shadow: 0 0 0 2px rgba(52,211,153,0.15); }
+.check-option.no input:checked ~ span { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); box-shadow: 0 0 0 2px rgba(248,113,113,0.15); }
 
 /* ============================================================
    YES / NO
@@ -2157,6 +2156,16 @@ a:hover { color: var(--sun-warm); }
     line-height: 1.15;
     position: relative; z-index: 1;
 }
+
+.tile-sub {
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: var(--text-3);
+    line-height: 1.2;
+    margin-top: 2px;
+    position: relative; z-index: 1;
+}
+.tile-pick.active .tile-sub { color: var(--text-2); }
 
 .tile-check {
     position: absolute;
@@ -3285,71 +3294,88 @@ a:hover { color: var(--sun-warm); }
     border-color: var(--rule-2);
 }
 
+/* Toggle flotante en la pantalla de login */
+.theme-toggle-login {
+    position: absolute;
+    top: 1.1rem; right: 1.1rem;
+    z-index: 20;
+    width: 42px; height: 42px;
+}
+.theme-toggle-login:hover { transform: scale(1.06); }
+.theme-toggle-login:active { transform: scale(0.95); }
+
 
 /* ============================================================
    LIGHT THEME ─ "Solar Daylight"
    ============================================================ */
 :root[data-theme="light"] {
-    --void:       #E8DEC2;
-    --void-2:     #F0E6CC;
-    --void-3:     #E4D9B9;
-    --surface:    #F7F1DF;
-    --surface-2:  #F2EBD4;
-    --surface-3:  #EBE2C7;
-    --silicon:    #D8CBA8;
-    --glass:      rgba(247, 241, 223, 0.78);
-    --glass-2:    rgba(242, 235, 212, 0.65);
+    /* Paleta limpia neutra (blancos/grises fríos suaves) — alta legibilidad */
+    --void:       #EDF1F7;
+    --void-2:     #F4F7FB;
+    --void-3:     #E6EBF3;
+    --surface:    #FFFFFF;
+    --surface-2:  #F6F9FD;
+    --surface-3:  #EDF2F9;
+    --silicon:    #DCE4F0;
+    --glass:      rgba(255, 255, 255, 0.86);
+    --glass-2:    rgba(246, 249, 253, 0.72);
 
-    --text:       #15161A;
-    --text-2:     #3A3528;
-    --text-3:     #6E6859;
-    --muted:      #948C7A;
-    --muted-2:    #C9BBA0;
+    --text:       #0F1729;
+    --text-2:     #2B3650;
+    --text-3:     #586484;
+    --muted:      #8893AC;
+    --muted-2:    #BAC4D6;
 
-    --rule:       rgba(8, 17, 31, 0.10);
-    --rule-2:     rgba(8, 17, 31, 0.18);
-    --rule-warm:  rgba(255, 154, 31, 0.50);
-    --rule-glow:  rgba(255, 154, 31, 0.65);
+    --rule:       rgba(15, 23, 41, 0.09);
+    --rule-2:     rgba(15, 23, 41, 0.15);
+    --rule-warm:  rgba(214, 120, 10, 0.35);
+    --rule-glow:  rgba(214, 120, 10, 0.40);
+
+    /* Acentos solares más profundos en modo claro (no neón, legibles sobre blanco) */
+    --sun-pale:   #F3C969;
+    --sun-core:   #E8920C;
+    --sun-warm:   #D6780A;
+    --sun-glow:   #C85A2A;
+    --sun-deep:   #A3430F;
 
     --ok:         #0F7A41;
     --ok-soft:    rgba(15, 122, 65, 0.10);
     --warn:       #B26800;
     --warn-soft:  rgba(178, 104, 0, 0.12);
-    --danger:     #B23B3B;
-    --danger-soft:rgba(178, 59, 59, 0.10);
+    --danger:     #C0392B;
+    --danger-soft:rgba(192, 57, 43, 0.10);
     --info:       #0077C0;
     --info-soft:  rgba(0, 119, 192, 0.10);
 
-    --shadow:     0 1px 0 rgba(255,255,255,0.7) inset, 0 14px 32px -18px rgba(11,26,51,0.20), 0 1px 2px rgba(11,26,51,0.06);
-    --shadow-glow: 0 0 0 1px rgba(255,212,73,0.35), 0 18px 44px -16px rgba(255,154,31,0.35);
+    --shadow:     0 1px 0 rgba(255,255,255,0.9) inset, 0 14px 32px -18px rgba(15,23,41,0.16), 0 1px 2px rgba(15,23,41,0.05);
+    --shadow-glow: 0 0 0 1px rgba(255,154,31,0.25), 0 18px 44px -16px rgba(255,154,31,0.25);
 }
 
 /* ---- Body / page bg ---- */
 [data-theme="light"] body {
     background-image:
-        radial-gradient(900px 600px at 85% -10%,  rgba(255,154,31,0.08), transparent 60%),
+        radial-gradient(900px 600px at 85% -10%,  rgba(255,154,31,0.06), transparent 60%),
         radial-gradient(700px 500px at -10% 110%, rgba(0,163,224,0.05),  transparent 65%),
-        radial-gradient(1000px 700px at 50% 50%,  rgba(255,212,73,0.04),   transparent 75%),
         var(--pv-grid),
-        linear-gradient(180deg, #E2D6B3 0%, #E8DEC2 60%, #DDD0A8 100%);
+        linear-gradient(180deg, #F4F7FB 0%, #EDF1F7 55%, #E6EBF3 100%);
 }
 
 /* ---- Splash ---- */
 [data-theme="light"] .splash-screen {
     background-image:
-        radial-gradient(circle at 50% 50%, rgba(255,154,31,0.10), transparent 38%),
-        radial-gradient(circle at 50% 50%, rgba(255,107,71,0.05), transparent 60%),
+        radial-gradient(circle at 50% 50%, rgba(255,154,31,0.07), transparent 42%),
+        radial-gradient(circle at 50% 50%, rgba(0,163,224,0.05), transparent 62%),
         var(--pv-grid),
-        linear-gradient(180deg, #E8DEC2 0%, #DDD0A8 100%);
+        linear-gradient(180deg, #F4F7FB 0%, #E6EBF3 100%);
 }
 
 /* ---- Login ---- */
 [data-theme="light"] .login-screen {
     background-image:
-        radial-gradient(700px 500px at 50% -10%, rgba(255,154,31,0.16), transparent 55%),
-        radial-gradient(600px 500px at 100% 100%, rgba(0,163,224,0.08), transparent 60%),
+        radial-gradient(700px 500px at 50% -10%, rgba(255,154,31,0.10), transparent 55%),
+        radial-gradient(600px 500px at 100% 100%, rgba(0,163,224,0.07), transparent 60%),
         var(--pv-grid),
-        linear-gradient(170deg, #E8DEC2 0%, #DDD0A8 55%, #E2D6B3 100%);
+        linear-gradient(170deg, #F4F7FB 0%, #E6EBF3 55%, #EDF1F7 100%);
 }
 /* Solar rays in light mode — much subtler */
 [data-theme="light"] .login-screen::before { opacity: 0.55; }
@@ -3442,3 +3468,87 @@ a:hover { color: var(--sun-warm); }
 }
 
 /* ---- Login title doesn't need dark text adjustment, vars handle it ---- */
+/* Cajita de inclinacion/orientacion dentro de cada area */
+.area-orientacion-box {
+    margin: 0.6rem 0 0.2rem;
+    padding: 0.85rem;
+    border: 1px dashed var(--rule-2);
+    border-radius: 10px;
+    background: var(--glass-2);
+}
+.area-orientacion-title {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--sun-warm);
+    margin-bottom: 0.6rem;
+}
+
+/* Grid de equipos de medición (checkboxes) */
+.equipos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+.equipo-chk { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.equipo-chk input[type="checkbox"] { display: none; }
+.equipo-chk span {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.6rem 0.7rem;
+    border: 1px solid var(--rule-2);
+    border-radius: 10px;
+    background: var(--glass-2);
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-2);
+    transition: all 0.15s;
+}
+.equipo-chk:hover span { border-color: var(--sun-warm); }
+.equipo-chk input:checked ~ span {
+    background: var(--ok-soft);
+    border-color: var(--ok);
+    color: var(--ok);
+    box-shadow: 0 0 0 2px rgba(52,211,153,0.15);
+}
+@media (max-width: 460px) { .equipos-grid { grid-template-columns: 1fr; } }
+
+/* ===== Cálculo ponderado de viabilidad ===== */
+.ponderado-box {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0.9rem 1rem;
+    margin-bottom: 0.9rem;
+    border: 1px solid var(--rule-2);
+    border-radius: 12px;
+    background: var(--glass-2);
+}
+.ponderado-info { display: flex; flex-direction: column; gap: 0.15rem; }
+.ponderado-eyebrow {
+    font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em;
+    color: var(--sun-warm); text-transform: uppercase;
+}
+.ponderado-desc { font-size: 0.8rem; color: var(--text-3); }
+.ponderado-resultado {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1rem 1.1rem; margin-bottom: 1rem;
+    border-radius: 14px;
+    border: 1px solid var(--rule-2);
+    background: var(--glass);
+}
+.pr-score {
+    font-family: var(--font-display);
+    font-size: 2.4rem; font-weight: 700; line-height: 1;
+    color: var(--sun-core);
+    text-shadow: 0 0 20px rgba(255,154,31,0.35);
+}
+.pr-detail { display: flex; flex-direction: column; gap: 0.2rem; }
+.pr-nivel { font-size: 1.05rem; font-weight: 800; color: var(--text); }
+.pr-hint { font-size: 0.75rem; color: var(--text-3); }
+/* Color del score según nivel */
+.ponderado-resultado[data-nivel="excelente"] .pr-score { color: var(--ok); text-shadow: 0 0 20px rgba(52,211,153,0.35); }
+.ponderado-resultado[data-nivel="bueno"]     .pr-score { color: var(--info); text-shadow: 0 0 20px rgba(56,189,248,0.35); }
+.ponderado-resultado[data-nivel="regular"]   .pr-score { color: var(--warn); text-shadow: 0 0 20px rgba(251,191,36,0.35); }
+.ponderado-resultado[data-nivel="dificil"]   .pr-score { color: var(--sun-glow); }
+.ponderado-resultado[data-nivel="no-viable"] .pr-score { color: var(--danger); text-shadow: 0 0 20px rgba(248,113,113,0.35); }
